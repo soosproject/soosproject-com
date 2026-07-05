@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>C-Law-ed Code — 防災 Law as Code</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f9f9f8;color:#1a1a1a;font-size:14px}
+.app{display:flex;flex-direction:column;min-height:100vh}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:1px solid #e5e5e3;background:#fff;position:sticky;top:0;z-index:10}
+.logo{display:flex;align-items:center;gap:10px}
+.logo-mark{width:30px;height:30px;background:#1F3864;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px;color:#fff;font-weight:600}
+.logo-text{font-size:15px;font-weight:600;color:#1a1a1a}
+.logo-sub{font-size:11px;color:#888;margin-top:1px}
+.nav{display:flex;gap:2px}
+.nav-btn{padding:6px 14px;font-size:13px;border:none;background:transparent;color:#666;cursor:pointer;border-radius:6px;transition:all 0.15s;font-weight:500}
+.nav-btn:hover{background:#f0f0ef;color:#1a1a1a}
+.nav-btn.active{background:#f0f0ef;color:#1a1a1a}
+.content{flex:1;display:flex;height:calc(100vh - 57px)}
+.sidebar{width:220px;flex-shrink:0;border-right:1px solid #e5e5e3;padding:14px 10px;overflow-y:auto;background:#fafaf9}
+.sidebar-label{font-size:10px;color:#aaa;font-weight:600;padding:4px 6px 2px;margin-top:10px;text-transform:uppercase;letter-spacing:0.6px}
+.sidebar-label:first-child{margin-top:0}
+.filter-chip{display:flex;align-items:center;justify-content:space-between;padding:5px 8px;border-radius:6px;cursor:pointer;font-size:12px;color:#555;transition:all 0.1s;user-select:none}
+.filter-chip:hover{background:#ebebea;color:#1a1a1a}
+.filter-chip.sel{background:#ebebea;color:#1a1a1a;font-weight:500}
+.chip-count{font-size:10px;background:#e5e5e3;border-radius:10px;padding:1px 6px;color:#888;flex-shrink:0}
+.main{flex:1;overflow-y:auto;padding:20px 24px}
+.screen{display:none}
+.screen.active{display:block}
+/* Stats */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
+.stat-card{background:#fff;border:1px solid #e5e5e3;border-radius:8px;padding:12px;text-align:center}
+.stat-num{font-size:24px;font-weight:600;color:#1a1a1a}
+.stat-label{font-size:11px;color:#888;margin-top:2px}
+/* OQ list */
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.section-title{font-size:14px;font-weight:600;color:#1a1a1a}
+.oq-list{display:flex;flex-direction:column;gap:8px}
+.oq-card{background:#fff;border:1px solid #e5e5e3;border-radius:10px;padding:14px 16px;cursor:pointer;transition:border-color 0.15s;border-left:3px solid transparent}
+.oq-card:hover{border-color:#ccc}
+.oq-card.p1{border-left-color:#E24B4A}
+.oq-card.p2{border-left-color:#EF9F27}
+.oq-card.p3{border-left-color:#1D9E75}
+.oq-card.resolved{opacity:0.6}
+.oq-header{display:flex;align-items:center;gap:6px;margin-bottom:7px;flex-wrap:wrap}
+.oq-id{font-size:11px;font-family:monospace;color:#aaa}
+.badge{font-size:10px;padding:2px 7px;border-radius:10px;font-weight:600}
+.bp1{background:#FDEAEA;color:#A32D2D}
+.bp2{background:#FEF3DC;color:#7A470A}
+.bp3{background:#E8F5EE;color:#1A6B3C}
+.bconflict{background:#EEEDFE;color:#3C3489}
+.blacuna{background:#FBEAF0;color:#72243E}
+.banachronism{background:#E6F1FB;color:#0C447C}
+.binternal{background:#FEF0DC;color:#7A3A0A}
+.bresolved{background:#E8F5EE;color:#1A6B3C}
+.route-badge{font-size:10px;padding:2px 7px;background:#f0f0ef;color:#666;border-radius:10px;font-family:monospace}
+.real-badge{font-size:10px;padding:2px 7px;background:#1F3864;color:#fff;border-radius:10px;font-weight:600}
+.oq-title{font-size:13px;font-weight:500;color:#1a1a1a;line-height:1.45}
+.oq-meta{display:flex;gap:10px;margin-top:8px;flex-wrap:wrap}
+.oq-meta-item{font-size:11px;color:#aaa}
+/* Workspace */
+.ws-back{font-size:12px;color:#888;cursor:pointer;display:flex;align-items:center;gap:4px;padding:4px 0;background:none;border:none;margin-bottom:14px}
+.ws-back:hover{color:#1a1a1a}
+.workspace{background:#fff;border:1px solid #e5e5e3;border-radius:10px;padding:22px}
+.ws-title{font-size:16px;font-weight:600;color:#1a1a1a;line-height:1.4;margin-bottom:6px}
+.ws-meta{font-size:11px;color:#aaa;margin-bottom:16px}
+.banner{border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:12px;display:flex;align-items:flex-start;gap:8px;line-height:1.55}
+.banner-warn{background:#FEF0EE;border:1px solid #F5C5C2;color:#8B2020}
+.banner-ok{background:#EBF5EE;border:1px solid #B8DBBF;color:#1A5C30}
+.banner-info{background:#EAF2FB;border:1px solid #B5D0EF;color:#0C3D7A}
+.statute-block{background:#fafaf9;border-radius:8px;padding:14px;margin-bottom:10px;border-left:3px solid #1F3864}
+.statute-block.conflict-block{border-left-color:#E24B4A}
+.statute-label{font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;font-weight:600}
+.statute-text{font-size:13px;color:#1a1a1a;line-height:1.65}
+.statute-ref{font-size:11px;color:#aaa;margin-top:6px;font-family:monospace}
+.conflict-arrow{text-align:center;font-size:20px;color:#ddd;padding:2px 0}
+.section-label{font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;margin:16px 0 8px;font-weight:600}
+.ai-box{font-size:13px;color:#1a1a1a;line-height:1.7;background:#fafaf9;border-radius:8px;padding:14px;margin-bottom:12px}
+.ai-loading{display:flex;align-items:center;gap:10px;font-size:13px;color:#888;padding:14px;background:#fafaf9;border-radius:8px}
+.dots{display:flex;gap:3px}
+.dots span{width:4px;height:4px;border-radius:50%;background:#bbb;animation:pulse 1.2s infinite}
+.dots span:nth-child(2){animation-delay:.2s}
+.dots span:nth-child(3){animation-delay:.4s}
+@keyframes pulse{0%,80%,100%{transform:scale(0.6);opacity:0.4}40%{transform:scale(1);opacity:1}}
+.exact-conflict{font-size:13px;color:#1a1a1a;line-height:1.7;background:#fafaf9;border-radius:8px;padding:14px;margin-bottom:12px;border-left:3px solid #1F3864}
+.options-grid{display:flex;flex-direction:column;gap:8px;margin-bottom:16px}
+.opt-card{border:1px solid #e5e5e3;border-radius:8px;padding:13px;cursor:pointer;transition:all 0.15s}
+.opt-card:hover{border-color:#bbb;background:#fafaf9}
+.opt-card.sel{border-color:#1F3864;background:#f5f7fb}
+.opt-label{font-size:11px;font-weight:600;color:#1F3864;margin-bottom:5px;text-transform:uppercase;letter-spacing:0.3px}
+.opt-text{font-size:13px;color:#1a1a1a;line-height:1.5}
+.opt-consequence{font-size:11px;color:#888;margin-top:7px;padding-top:7px;border-top:1px solid #e5e5e3}
+.cedar-wrap{background:#02281F;border-radius:8px;padding:15px;margin-bottom:16px}
+.cedar-label{font-size:10px;color:#4DB88A;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;font-weight:600}
+.cedar-code{font-family:monospace;font-size:11px;color:#8DDAB8;line-height:1.75;white-space:pre-wrap}
+.action-row{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
+.btn-pri{padding:8px 18px;background:#1F3864;color:#fff;border:none;border-radius:7px;font-size:13px;cursor:pointer;font-weight:500}
+.btn-pri:hover{background:#162b4d}
+.btn-sec{padding:8px 16px;background:transparent;color:#666;border:1px solid #d5d5d3;border-radius:7px;font-size:13px;cursor:pointer}
+.btn-sec:hover{background:#f0f0ef;color:#1a1a1a}
+/* Catalog */
+.catalog-list{display:flex;flex-direction:column;gap:12px}
+.cat-card{background:#fff;border:1px solid #e5e5e3;border-radius:10px;padding:16px}
+.cat-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;gap:12px}
+.lri-table{width:100%;font-size:11px;border-collapse:collapse}
+.lri-table td{padding:4px 0;border-bottom:1px solid #f0f0ef;vertical-align:top}
+.lri-table td:first-child{color:#888;width:40%;padding-right:8px}
+.lri-table td:last-child{font-family:monospace;color:#1a1a1a;word-break:break-all}
+.badge-pending{font-size:10px;padding:2px 8px;background:#FEF3DC;color:#7A470A;border-radius:10px;font-weight:600;white-space:nowrap}
+.badge-signed{font-size:10px;padding:2px 8px;background:#E8F5EE;color:#1A6B3C;border-radius:10px;font-weight:600;white-space:nowrap}
+.badge-suspended{font-size:10px;padding:2px 8px;background:#FDEAEA;color:#A32D2D;border-radius:10px;font-weight:600;white-space:nowrap}
+</style>
+</head>
+<body>
+<div class="app">
+<div class="topbar">
+  <div class="logo">
+    <div class="logo-mark">C⚖</div>
+    <div>
+      <div class="logo-text">C-Law-ed Code</div>
+      <div class="logo-sub">防災 Law as Code · SOOS / CAP-RRS · v2 — verified conflicts</div>
+    </div>
+  </div>
+  <div class="nav">
+    <button class="nav-btn active" onclick="show('registry')">未解決事項一覧</button>
+    <button class="nav-btn" onclick="show('workspace')" id="ws-tab" style="display:none">検討画面</button>
+    <button class="nav-btn" onclick="show('catalog')">承認済みカタログ</button>
+  </div>
+</div>
+
+<div class="content">
+  <div class="sidebar">
+    <div class="sidebar-label">優先度</div>
+    <div class="filter-chip sel" onclick="filt('priority','all',this)">すべて <span class="chip-count" id="cnt-all">6</span></div>
+    <div class="filter-chip" onclick="filt('priority','P1',this)"><span style="color:#E24B4A">● P1 障壁（対応必須）</span><span class="chip-count">3</span></div>
+    <div class="filter-chip" onclick="filt('priority','P2',this)"><span style="color:#EF9F27">● P2 重要</span><span class="chip-count">2</span></div>
+    <div class="filter-chip" onclick="filt('priority','P3',this)"><span style="color:#1D9E75">● P3 潜在的</span><span class="chip-count">1</span></div>
+    <div class="sidebar-label">種別</div>
+    <div class="filter-chip" onclick="filt('type','internal contradiction',this)">内部矛盾<span class="chip-count">1</span></div>
+    <div class="filter-chip" onclick="filt('type','cross-statute conflict',this)">法令間の抵触<span class="chip-count">3</span></div>
+    <div class="filter-chip" onclick="filt('type','lacuna',this)">法の欠缺（規定なし）<span class="chip-count">1</span></div>
+    <div class="filter-chip" onclick="filt('type','anachronism',this)">現行法未想定<span class="chip-count">1</span></div>
+    <div class="sidebar-label">経路</div>
+    <div class="filter-chip" onclick="filt('route','A',this)">経路A（既存法で対応可）<span class="chip-count">2</span></div>
+    <div class="filter-chip" onclick="filt('route','B',this)">経路B（解釈で対応）<span class="chip-count">3</span></div>
+    <div class="filter-chip" onclick="filt('route','C',this)">経路C（立法要）<span class="chip-count">1</span></div>
+    <div class="sidebar-label">状態</div>
+    <div class="filter-chip" onclick="filt('status','open',this)">未解決<span class="chip-count">5</span></div>
+    <div class="filter-chip" onclick="filt('status','resolved',this)">解決済み<span class="chip-count">1</span></div>
+  </div>
+
+  <div class="main">
+    <div class="screen active" id="screen-registry">
+      <div class="stats-row">
+        <div class="stat-card"><div class="stat-num" style="color:#E24B4A">3</div><div class="stat-label">P1 対応必須</div></div>
+        <div class="stat-card"><div class="stat-num">6</div><div class="stat-label">未解決事項 総数</div></div>
+        <div class="stat-card"><div class="stat-num" style="color:#1D9E75">1</div><div class="stat-label">解決済み</div></div>
+        <div class="stat-card"><div class="stat-num" style="color:#7A470A">1</div><div class="stat-label">カタログ登録数</div></div>
+      </div>
+      <div class="section-header">
+        <div class="section-title">未解決の法的論点 — 防災法令群</div>
+        <span class="real-badge">● 実際の抵触事例で検証済み</span>
+      </div>
+      <div class="oq-list" id="oq-list">
+        <div class="oq-card p1" data-p="P1" data-t="internal contradiction" data-r="B" data-s="open" onclick="openWS(0)">
+          <div class="oq-header"><span class="oq-id">OQ-BOSAI-001</span><span class="badge bp1">P1</span><span class="badge binternal">内部矛盾</span><span class="route-badge">経路B</span><span class="real-badge">✓ 実例確認済み</span></div>
+          <div class="oq-title">災害対策基本法 §49の11 — §② duty-with-consent vs. §③ permission-without-consent: simultaneous application in the pre-declaration window kills people</div>
+          <div class="oq-meta"><span class="oq-meta-item">個人情報保護委員会 / 内閣府防災</span><span class="oq-meta-item">災害対策基本法 §49の11②③</span><span class="oq-meta-item" style="color:#A32D2D">⚠ Documented cause of municipal paralysis — Noto 2024</span></div>
+        </div>
+        <div class="oq-card p1" data-p="P1" data-t="cross-statute conflict" data-r="B" data-s="open" onclick="openWS(1)">
+          <div class="oq-header"><span class="oq-id">OQ-BOSAI-002</span><span class="badge bp1">P1</span><span class="badge bconflict">法令間の抵触</span><span class="route-badge">経路B</span><span class="real-badge">✓ 実例確認済み</span></div>
+          <div class="oq-title">災害救助法 vs. 災害対策基本法 — dual command: 都道府県知事 (救助) and 市町村長 (避難指示) with no statutory coordination mechanism</div>
+          <div class="oq-meta"><span class="oq-meta-item">内閣府 / 都道府県 / 市町村</span><span class="oq-meta-item">災害救助法 §2 · 災害対策基本法 §60</span><span class="oq-meta-item" style="color:#A32D2D">⚠ Root cause — 阪神 / 東日本 / 能登 coordination failures</span></div>
+        </div>
+        <div class="oq-card p1" data-p="P1" data-t="cross-statute conflict" data-r="B" data-s="open" onclick="openWS(2)">
+          <div class="oq-header"><span class="oq-id">OQ-BOSAI-003</span><span class="badge bp1">P1</span><span class="badge bconflict">法令間の抵触</span><span class="route-badge">経路B</span><span class="real-badge">✓ 実例確認済み</span></div>
+          <div class="oq-title">2025年改正災害対策基本法 (July 1, 2025) — CATALOG_VERSION_CONFLICT: entire pre-reform 防災 catalog corpus automatically suspended under statute-primacy rule</div>
+          <div class="oq-meta"><span class="oq-meta-item">内閣府 / 全省庁</span><span class="oq-meta-item">改正災害対策基本法 令和7年法律第51号</span><span class="oq-meta-item" style="color:#7A470A">CATALOG_VERSION_CONFLICT auto-triggered</span></div>
+        </div>
+        <div class="oq-card p2" data-p="P2" data-t="cross-statute conflict" data-r="A" data-s="open" onclick="openWS(3)">
+          <div class="oq-header"><span class="oq-id">OQ-BOSAI-004</span><span class="badge bp2">P2</span><span class="badge bconflict">法令間の抵触</span><span class="route-badge">経路A</span><span class="real-badge">✓ 実例確認済み</span></div>
+          <div class="oq-title">避難行動要支援者名簿 vs. 個別避難計画 — consent asymmetry: one-person consent vs. two-person consent for identical population; 8% municipal completion rate</div>
+          <div class="oq-meta"><span class="oq-meta-item">内閣府 / 市町村</span><span class="oq-meta-item">災害対策基本法 §49の11② vs §49の14②</span></div>
+        </div>
+        <div class="oq-card p2" data-p="P2" data-t="lacuna" data-r="C" data-s="open" onclick="openWS(4)">
+          <div class="oq-header"><span class="oq-id">OQ-BOSAI-005</span><span class="badge bp2">P2</span><span class="badge blacuna">法の欠缺（規定なし）</span><span class="route-badge">経路C</span></div>
+          <div class="oq-title">AI-generated 罹災証明書 — 被災者生活再建支援法 §2(3) assumes human municipal officer as issuer; no statutory basis for AI-assisted issuance</div>
+          <div class="oq-meta"><span class="oq-meta-item">内閣府 / 市区町村</span><span class="oq-meta-item">被災者生活再建支援法 §2(3) · 地方自治法 §153</span></div>
+        </div>
+        <div class="oq-card p3 resolved" data-p="P3" data-t="anachronism" data-r="A" data-s="resolved" onclick="openWS(5)">
+          <div class="oq-header"><span class="oq-id">OQ-BOSAI-006</span><span class="badge bp3">P3</span><span class="badge banachronism">現行法未想定</span><span class="route-badge">経路A</span><span class="badge bresolved">✓ 解決済み</span></div>
+          <div class="oq-title">AIによる災害センサーの常時監視は許されるか — 第54条は「人が確認する」ことを前提としており、AIによる分単位以下の高頻度収集を明示的には想定していない</div>
+          <div style="font-size:11px;color:#1A6B3C;margin:2px 0 6px">➔ 結論：条文は頻度を制限していないため、AIによる高頻度収集も同じ権限の範囲内と整理（禁止規定なし＝許容）</div>
+          <div class="oq-meta"><span class="oq-meta-item">内閣府</span><span class="oq-meta-item">災害対策基本法 §54</span><span class="oq-meta-item" style="color:#1A6B3C">✓ Cedarポリシー承認済み — BOSAI-CAT-001</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="screen" id="screen-workspace">
+      <button class="ws-back" onclick="show('registry')">← 一覧に戻る</button>
+      <div id="ws-content"></div>
+    </div>
+
+    <div class="screen" id="screen-catalog">
+      <div class="section-header"><div class="section-title">CAP-RRSカタログ — 防災分野 承認済み項目</div></div>
+      <div class="catalog-list">
+        <div class="cat-card">
+          <div class="cat-header">
+            <div><div style="font-size:11px;font-family:monospace;color:#aaa">BOSAI-CAT-001 · draft-sato-soos-cap-rrs-jp-00</div><div style="font-size:14px;font-weight:600;margin-top:4px">AIによる災害センサー常時監視 — 高頻度収集の承認</div><div style="font-size:12px;color:#666;margin-top:4px;font-weight:400">第54条の情報収集権限は頻度を制限していないため、AIによる分単位以下の収集も同じ権限の行使として承認</div></div>
+            <span class="badge-signed">✓ 承認済み</span>
+          </div>
+          <table class="lri-table">
+            <tr><td>profile</td><td>https://laws.e-gov.go.jp/lri/v1</td></tr>
+            <tr><td>law_id</td><td>322AC0000000223</td></tr>
+            <tr><td>article_ref</td><td>/Law/LawBody/MainProvision/Article[@Num='54']</td></tr>
+            <tr><td>resolution_basis</td><td>statute_clear</td></tr>
+            <tr><td>endorsed_at</td><td>2026-06-24T09:00:00Z</td></tr>
+            <tr><td>authority_id</td><td>https://cao.go.jp/authority/bosai</td></tr>
+            <tr><td>amendment_detection_endpoint</td><td>https://laws.e-gov.go.jp/api/2/updatelawlists/{date}</td></tr>
+            <tr><td>interpretation_endpoint</td><td>https://clawed.soosproject.com/jp/interpretations/322AC0000000223/54</td></tr>
+            <tr><td>endorsement_claim</td><td style="color:#1A6B3C">eyJhbGciOiJFUzI1NiJ9… (signed JWT)</td></tr>
+          </table>
+          <div style="margin-top:12px;background:#02281F;border-radius:8px;padding:14px">
+            <div style="font-size:10px;color:#4DB88A;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;font-weight:600">Cedarポリシー（AIエージェントに対する実行可能な許可条件）</div>
+            <div style="font-family:monospace;font-size:11px;color:#8DDAB8;line-height:1.75">permit(
+  principal is SOOS::Agent,
+  action == SOOS::Action::"SensorAggregate",
+  resource is SOOS::DisasterZone
+) when {
+  principal.has_valid_sacr &&
+  resource.disaster_active == true &&
+  principal.aggregation_cadence_seconds >= 1
+};</div>
+          </div>
+        </div>
+        <div class="cat-card" style="opacity:0.55">
+          <div class="cat-header">
+            <div><div style="font-size:11px;font-family:monospace;color:#aaa">BOSAI-CAT-002 · OQ-BOSAI-001の解決待ち</div><div style="font-size:14px;font-weight:600;margin-top:4px">避難行動要支援者名簿の共有 — 災害発生前の判断が難しい期間</div></div>
+            <span class="badge-pending">⏳ 保留中</span>
+          </div>
+          <div style="font-size:12px;color:#888">OQ-BOSAI-001（第49条の11の内部矛盾）が解決・承認されるまでCedarポリシーは起草できません。必要な解決根拠：<code>internal_conflict_resolution</code>（内部矛盾の解消）— 内閣法制局の共同承認が必要。<span style="color:#1F3864;cursor:pointer" onclick="openWS(0);show('workspace')">検討画面を開く →</span></div>
+        </div>
+        <div class="cat-card" style="opacity:0.55">
+          <div class="cat-header">
+            <div><div style="font-size:11px;font-family:monospace;color:#aaa">BOSAI-CAT-* · CATALOG_VERSION_CONFLICT（法改正による自動失効）</div><div style="font-size:14px;font-weight:600;margin-top:4px">2025年7月改正前に承認された全項目 — 法優先ルールにより自動停止</div></div>
+            <span class="badge-suspended">⚠ 停止中</span>
+          </div>
+          <div style="font-size:12px;color:#888">改正災害対策基本法（2025年7月1日施行）により、2025年7月1日より前に承認されたカタログ項目はすべて自動的に停止されました（法令が常に最優先されるルールが正しく機能した結果）。再承認の一斉見直しが必要です。<span style="color:#1F3864;cursor:pointer" onclick="openWS(2);show('workspace')">検討画面を開く →</span></div>
+        </div>
+      </div>
+
+      <div class="section-header" style="margin-top:26px"><div class="section-title">対象法令（e-Gov法令検索より収集）</div></div>
+      <div class="cat-card">
+        <div style="font-size:12px;color:#666;margin-bottom:12px;line-height:1.6">このデモは架空の法令ではなく、e-Gov法令検索（laws.e-gov.go.jp）から取得した実際の条文テキストを分析しています。対象は以下の4法令です。</div>
+        <table class="lri-table">
+          <tr><td>災害対策基本法（昭和36年法律第223号、令和7年改正含む）</td><td>322AC0000000223</td></tr>
+          <tr><td>災害救助法（昭和22年法律第118号）</td><td>322AC0000000118</td></tr>
+          <tr><td>被災者生活再建支援法（平成10年法律第66号）</td><td>410AC0100000066</td></tr>
+          <tr><td>地方自治法（昭和22年法律第67号）</td><td>322AC0000000067</td></tr>
+        </table>
+        <div style="font-size:11px;color:#aaa;margin-top:10px">法令IDは e-Gov法令検索の lawid 形式。改正の検知は amendment_detection_endpoint（laws.e-gov.go.jp/api/2/updatelawlists）を通じて自動的に行われます。</div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+const OQS=[
+{id:'OQ-BOSAI-001',priority:'P1',type:'internal contradiction',route:'経路B',status:'open',verified:true,
+ title:'災害対策基本法 §49の11 — 第②項と第③項が発令直前の期間で矛盾する内部矛盾',
+ ministry:'個人情報保護委員会 · 内閣府防災',route_class:'PROHIBITION_BOTTLENECK（許可の隘路）— レベル2',
+ real_impact:'2024年能登半島地震で市町村が機能停止した原因として記録されている — どちらの項が適用されるか判断できず、市町村が要支援者名簿の共有を止めてしまった。',
+ statute:'第四十九条の十一 第二項：市町村長は、災害の発生に備え、避難支援等の実施に必要な限度で、地域防災計画の定めるところにより、消防機関、都道府県警察、民生委員、社会福祉協議会、自主防災組織その他の避難支援等の実施に携わる関係者に対し、名簿情報を提供するものとする。ただし、当該市町村の条例に特別の定めがある場合を除き、名簿情報を提供することについて本人の同意が得られない場合は、この限りでない。',
+ statute_ref:'災害対策基本法 §49の11②（平時提供 — 本人同意必要）',
+ conflict_statute:'第四十九条の十一 第三項：市町村長は、災害が発生し、又は発生するおそれがある場合において、避難行動要支援者の生命又は身体を災害から保護するために特に必要があると認めるときは、避難支援等の実施に必要な限度で、避難支援等関係者その他の者に対し、名簿情報を提供することができる。この場合においては、名簿情報を提供することについて本人の同意を得ることを要しない。',
+ conflict_ref:'災害対策基本法 §49の11③（災害時提供 — 本人同意不要）',
+ exact_conflict:'第②項は同意を必要とする「義務」（「提供するものとする」）。第③項は同意不要の「許可」（「提供することができる」）。「災害が発生するおそれ」がいつ第②項から第③項へ切り替わるのか、条文上の定義がない。発令直前の重要な期間では両項が同時に矛盾したまま適用される。市町村職員は「共有する義務」「同意を得る義務」「同意なしで共有できる許可」の3つに同時に直面する。どちらが優先するかを定める法的な仕組みが存在しない。',
+ resolution_basis:'internal_conflict_resolution',
+ options:[
+  {label:'選択肢A — 解釈指針の法令化',text:'2022年の内閣府指針を拘束力のある政令に格上げし、次のいずれかが生じた時点で第③項が自動的に第②項に優先すると明記する：(a) 警戒レベル3発令、(b) 避難指示発令、(c) 非常災害対策本部設置。',consequence:'速い — 国会審議を経ない政令で対応可能。市町村の機能停止を明確に解消できる。Cedarポリシーの閾値を正式に組み込める。内閣法制局の共同承認が必要（解決根拠：internal_conflict_resolution）。'},
+  {label:'選択肢B — 第49条の11の改正',text:'第49条の11に移行条件を追加：「前項の規定は、警戒レベル3以上の避難情報が発令されたとき、又は非常災害対策本部が設置されたときは、適用しない。」',consequence:'法的に最も望ましい — 曖昧さを根本から解消。国会での法改正が必要 — 12〜18ヶ月。当面は選択肢Aを暫定措置として使用。'},
+  {label:'選択肢C — 条例委任の標準化',text:'既存の第49条の11②ただし書の枠組みを使い、第②項→第③項への移行基準を定めた標準モデル条例を作成し、全市町村に採用を促す。',consequence:'国会審議は不要だが、1,741市町村がそれぞれ異なる基準を定めると現状の曖昧さより悪化する可能性がある。あくまで橋渡し的な措置。'}
+ ],
+ cedar:`permit(
+  principal is SOOS::Agent,
+  action == SOOS::Action::"ShareYoshienList",
+  resource is SOOS::EvacuationSupportRegister
+) when {
+  principal.has_valid_sacr &&
+  (resource.warning_level >= 3 ||
+   context.hijohi_taisaku_honbu_active == true)
+};
+// resolution_basis: internal_conflict_resolution
+// PENDING: Cabinet Order or §49の11 amendment + 内閣法制局 co-endorsement`
+},{id:'OQ-BOSAI-002',priority:'P1',type:'cross-statute conflict',route:'経路B',status:'open',verified:true,
+ title:'災害救助法 vs. 災害対策基本法 — 指揮系統が二重で、法令上の調整の仕組みがない',
+ ministry:'内閣府 · 都道府県 · 市町村 · 警察庁',route_class:'PROHIBITION_BOTTLENECK（許可の隘路）— レベル2',
+ real_impact:'阪神淡路大震災(1995)・東日本大震災(2011)・能登半島地震(2024)における指揮調整の失敗の構造的な根本原因。2025年の改正で部分的に対応されたが、二重権限という根本構造は解消されていない。',
+ statute:'災害救助法 第二条：救助は、都道府県知事が、政令で定める基準に従い行うものとする。都道府県知事は、必要に応じ、救助の実施に関する事務の一部を市町村長が行うこととすることができる。',
+ statute_ref:'災害救助法 §2（都道府県知事が救助の一義的権限者）',
+ conflict_statute:'災害対策基本法 第六十条：市町村長は、災害が発生し、又は発生するおそれがある場合において人の生命又は身体を災害から保護し、その他災害の拡大を防ぎ、及び災害の影響を最小限にするために必要があると認めるときは、必要と認める地域の居住者等に対し、避難のための立退きを指示することができる。',
+ conflict_ref:'災害対策基本法 §60（市町村長が避難指示の一義的権限者）',
+ exact_conflict:'大規模災害が発生すると：都道府県知事が救助法に基づき救助活動を指示し、市町村長が基本法に基づき避難指示を出し、都道府県警察は公安委員会の下で活動する。3つの独立した指揮系統がそれぞれ法的に有効だが、それらの間の矛盾を解消する法的な仕組みが存在しない。',
+ resolution_basis:'cross_statute_coordination',
+ options:[
+  {label:'選択肢A — 防災庁 司令塔モデル',text:'2026年秋に新設される防災庁が法的な調整権限を持つ。防災庁長官がスタンディングプラン（常設計画）を発動すると、3つの指揮系統はすべて防災庁の計画に従う。法的根拠：防災庁設置法第12条の勧告権＋優先順位を定める政令。',consequence:'防災庁設置法に調整権限を明記する必要がある。Cedarポリシー：解決根拠＝cross_statute_coordination（複数法令の調整）。防災庁＋都道府県知事代表の共同承認が必要。'},
+  {label:'選択肢B — 統合指揮システム（ICS）の法制化',text:'救助法と基本法の両方を改正し、共同調整の手続きを追加：災害レベル4に達した場合、都道府県知事を議長、市町村長を現場指揮官、公安委員会を治安担当として、法定の統合指揮本部を設置する。',consequence:'構造として最も正しい対応。2つの法律を同時に改正する必要がある。ウィーンIETF後の立法目標。当面は選択肢Aで対応。'}
+ ],
+ cedar:`permit(
+  principal is SOOS::Agent,
+  action == SOOS::Action::"CoordinateDisasterResponse",
+  resource is SOOS::MultiAgencyOperation
+) when {
+  principal.has_valid_sacr &&
+  context.bosai_standing_plan_id != "" &&
+  context.disaster_level >= 4
+};
+// resolution_basis: cross_statute_coordination
+// co_endorsement_required: true
+// co_endorsers: [防災庁, 都道府県知事代表]
+// PENDING: 防災庁設置法 coordination authority scope`
+},{id:'OQ-BOSAI-003',priority:'P1',type:'cross-statute conflict',route:'経路B',status:'open',verified:true,
+ title:'2025年改正災害対策基本法（2025年7月1日施行）— CATALOG_VERSION_CONFLICT：法令優先ルールが想定通りに機能した事例',
+ ministry:'内閣府 · 全省庁',route_class:'CATALOG_VERSION_CONFLICT（登録失効）（DR-CAPRRS-INTERP-01 §Y）',
+ real_impact:'改正災害対策基本法（令和7年法律第51号）は2025年5月28日成立、同年7月1日施行。2025年7月1日より前に承認されたCAP-RRSカタログ項目はすべて自動的に停止される — これは法令優先ルールが設計通りに機能した結果。',
+ statute:'改正災害対策基本法（令和7年5月28日成立、令和7年7月1日施行）：2024年1月能登半島地震及び同年9月奥能登豪雨を踏まえ、広域避難、被災者情報の共有、応急仮設住宅の整備等に関する規定を大幅に改正。',
+ statute_ref:'改正災害対策基本法 令和7年法律第51号',
+ conflict_statute:'CAP-RRS 法令優先ルール（DR-CAPRRS-INTERP-01 §Y）：もし対象の法令に、承認時点（endorsed_at）より後の公布日を持つ改正が含まれていた場合、そのCedarポリシーは自動的に停止され、CATALOG_VERSION_CONFLICT（登録失効）が発生する。',
+ conflict_ref:'DR-CAPRRS-INTERP-01 §Y — 法令優先ルール',
+ exact_conflict:'これは2つの法令の間の抵触ではなく、法令優先ルールが設計通りに機能しているだけである。実務上の帰結：2025年7月1日より前に承認された防災分野のカタログ項目はすべて、改正後の条文に基づく再承認を待つ間、停止される。',
+ resolution_basis:'statute_clear',
+ options:[
+  {label:'選択肢A — 緊急再承認スウィープ',text:'一括再承認：C-Law-ed Codeが影響を受ける全項目について2025年改正後の条文に基づく更新版Cedarポリシー案を生成し、内閣法制局／所管省庁が迅速な承認審査を行う。目標：防災庁の2026年秋の発足に合わせて90日以内に完了。',consequence:'正しい対応。OQ-CYCLE-01に対応。発足時には再承認済みの一式が新組織で利用可能になる。'},
+  {label:'選択肢B — 移行期間ブリッジ条項',text:'防災庁設置法に経過措置を規定：2025年以前の項目は防災庁設置日から180日間有効とし、その期間内に再承認を行う。',consequence:'移行期間中の法的な裏付けを提供できる。防災庁設置法がCAP-RRSカタログの仕組みを明示的に参照すれば、SOOSが新組織の名指しされたインフラとなり、戦略的価値が高い。'}
+ ],
+ cedar:`// No new Cedar policy — this OQ resolves a process failure, not an authorization gap.
+// Resolution: batch re-endorsement workflow
+
+{
+  "event_type": "CATALOG_VERSION_CONFLICT",
+  "catalog_entry_id": "BOSAI-CAT-*",
+  "endorsed_at": "<pre-2025-07-01>",
+  "conflicting_amendment_promulgation_date": "2025-05-28",
+  "suspension_effective_at": "2025-07-01T00:00:00Z",
+  "resolution": null
+}`
+},{id:'OQ-BOSAI-004',priority:'P2',type:'cross-statute conflict',route:'経路A',status:'open',verified:true,
+ title:'避難行動要支援者名簿 vs. 個別避難計画 — 同一人物に対して同意の要件が異なる',
+ ministry:'内閣府 · 市町村',route_class:'経路A — 解釈で対応可能',
+ real_impact:'直近の調査では、個別避難計画を策定済みの市町村はわずか8％。同意要件の不一致が主要なボトルネックとして記録されている — 同一人物についても名簿と計画でデータ共有のルールが異なるため、市町村が計画を実際に運用できない。',
+ statute:'災害対策基本法 §49の11②：名簿情報の平時提供 — 本人の同意が得られない場合は提供できない（条例の特別定め除く）',
+ statute_ref:'災害対策基本法 §49の11②（名簿情報 — 本人同意）',
+ conflict_statute:'災害対策基本法 §49の14②（個別避難計画情報の提供）：個別避難計画情報の提供は、避難行動要支援者本人及び避難支援等実施者の同意が必要 — 名簿は本人1名の同意、計画は本人＋支援者の2者同意が必要',
+ conflict_ref:'災害対策基本法 §49の14②（個別避難計画情報 — 2者同意）',
+ exact_conflict:'同じ要支援者本人のデータであっても、2つの異なる同意の仕組みが適用される：名簿は本人の同意のみで足りるが、個別避難計画は本人に加えて支援者の同意も必要となる。市町村はどちらの同意を得ているかによって、一方は共有できても他方は共有できない状態に陥る。名簿がなければ計画は機能せず、その逆も同様である。',
+ resolution_basis:'interpretive_ruling',
+ options:[
+  {label:'選択肢A — 統一同意フォーム（経路A）',text:'第49条の14②を第49条の11②を包含するものと解釈する：第49条の11②の同意を得れば、第49条の14②の本人同意の要件も同時に満たされるとする。この解釈を内閣府の解釈指針として発出する。',consequence:'速い — 立法不要。解釈により同意要件の不一致を解消できる。Cedarポリシー：解決根拠＝interpretive_ruling（解釈による決定）；解釈指針を根拠文書として引用。'},
+  {label:'選択肢B — 第49条の14の改正',text:'第49条の14②を第49条の11②に合わせて改正：個別避難計画も本人の同意のみで足りるようにし、名簿と同じ扱いにする。支援者の同意は努力義務とする。',consequence:'法的にすっきりしている。国会での法改正が必要 — 12〜18ヶ月。当面は選択肢Aで対応。'}
+ ],
+ cedar:`permit(
+  principal is SOOS::Agent,
+  action == SOOS::Action::"ShareEvacuationPlan",
+  resource is SOOS::IndividualEvacuationPlan
+) when {
+  principal.has_valid_sacr &&
+  resource.person_consent_obtained == true &&
+  resource.support_worker_consent_obtained == true
+};
+// resolution_basis: interpretive_ruling
+// resolution_instrument_id: <Cabinet Office 解釈指針 citation>
+// PENDING: 解釈指針 issuance`
+},{id:'OQ-BOSAI-005',priority:'P2',type:'lacuna',route:'経路C',status:'open',verified:false,
+ title:'AIが作成する罹災証明書 — 被災者生活再建支援法第2条第3項は人間の市町村職員を前提としており、AIによる発行の法的根拠がない',
+ ministry:'内閣府 · 市区町村',route_class:'PROHIBITION_BOTTLENECK（許可の隘路）— レベル3（経路C）',
+ real_impact:'',
+ statute:'被災者生活再建支援法 第二条第三項：「罹災証明書」とは、市町村長が、当該市町村の区域内において災害により住家に被害を受けた者に対し、その住家の被害の程度を証明する書類をいう。',
+ statute_ref:'被災者生活再建支援法 §2(3)',
+ conflict_statute:'地方自治法 第百五十三条：普通地方公共団体の長は、その権限に属する事務の一部をその補助機関である職員に委任し、又はこれに臨時に代理させることができる。（AIは「補助機関である職員」に該当しない）',
+ conflict_ref:'地方自治法 §153（委任先は職員のみ）',
+ exact_conflict:'第2条第3項は罹災証明書を市町村長が発行するものと定めている。地方自治法第153条は「補助機関である職員」への委任のみを認めており、AIシステムは「職員」に該当しない。現行法の下では、たとえ人間による副署があっても、AIが罹災証明書を作成・証明する法的な道筋は存在しない。',
+ resolution_basis:'statute_clear',
+ options:[
+  {label:'選択肢A — 職員委任構成（経路Aの橋渡し措置）',text:'AIは市町村職員の「道具」として位置づけ、委任先とはしない。AIが生成した判定に対する職員のデジタル署名が法的な行為となる。現行法の改正なしで対応可能。',consequence:'法的に安全。ただしスケールしにくい — 職員がボトルネックのまま残る。第1段階の橋渡し措置に留まる。'},
+  {label:'選択肢B — 被災者生活再建支援法第2条第3項の改正（経路C）',text:'「又は当該市町村長が指定するAI認定システム」を発行主体として追加し、GAR（監査証跡）を法的な説明責任の記録とする。',consequence:'長期的に最適。GARの監査証跡こそが信頼保護の仕組みそのものであり、SOOSにとって本丸案件で最も説得力のある論点となる。立法までの見通しは18〜24ヶ月。'}
+ ],
+ cedar:`permit(
+  principal is SOOS::Agent,
+  action == SOOS::Action::"DraftRisaiCertificate",
+  resource is SOOS::HousingDamageRecord
+) when {
+  principal.has_valid_sacr &&
+  principal.delegating_officer_id != "" &&
+  resource.damage_assessment_complete == true &&
+  context.human_countersignature_required == true
+};`
+},{id:'OQ-BOSAI-006',priority:'P3',type:'anachronism',route:'経路A',status:'resolved',verified:false,
+ title:'AIによる災害センサーの常時監視は許されるか — 第54条は人による確認を前提としており、分単位以下のAI収集を明示的には想定していない',
+ ministry:'内閣府',route_class:'経路A — 既存法で対応可能・改正不要',
+ real_impact:'',
+ statute:'災害対策基本法 第五十四条：市町村長は、災害が発生し、又は発生するおそれがある場合において、当該市町村の地域に係る災害に関する情報を収集するため必要があると認めるときは、当該市町村の区域内の住民又は滞在者その他の者に対し、情報の報告を求めることができる。',
+ statute_ref:'災害対策基本法 §54',
+ conflict_statute:'（現行法未想定の事例 — 抵触する法令は存在しない。第54条は情報収集の権限を与えているが、頻度についての制限はない。AIによるセンサー収集は同じ権限をより高度に行使しているに過ぎない — 条文は人による収集を要求しておらず、頻度の上限も定めていない。「規定がない」ことは「禁止されている」ことを意味しない。）',
+ conflict_ref:'経路A — 既存の条文の解釈で新しい利用形態をカバーできる',
+ exact_conflict:'なし — 第54条はAIの登場より前に制定されたが、AIの利用と矛盾するものではない。経路Aによる解決：既存の法的権限は解釈によって新しい利用形態（AIによる高頻度収集）をカバーできる。改正は不要。',
+ resolution_basis:'statute_clear',
+ options:[{label:'✓ 解決済み — 経路Aの解釈を採用',text:'第54条は情報収集の権限を頻度の制限なく認めている。分単位以下のAIセンサー収集は同じ法的権限のより高度な行使である。内閣府が解釈指針を発出。Cedarポリシーを起草し、BOSAI-CAT-001として承認済み。',consequence:'解決済み。カタログ登録BOSAI-CAT-001は運用中。2026年6月24日承認。'}],
+ cedar:null
+}];
+
+let curOQ=0,curOpt=-1,activeF={priority:'all',type:null,route:null,status:null};
+
+function show(name){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('screen-'+name).classList.add('active');
+  const idx={registry:0,workspace:1,catalog:2}[name];
+  document.querySelectorAll('.nav-btn')[idx]?.classList.add('active');
+  if(name==='workspace') document.getElementById('ws-tab').style.display='';
+}
+
+function filt(dim,val,el){
+  if(dim==='priority'){
+    activeF.priority=val;
+    document.querySelectorAll('.sidebar .filter-chip').forEach((c,i)=>{if(i<4)c.classList.remove('sel')});
+  } else {
+    activeF[dim]=(activeF[dim]===val)?null:val;
+    document.querySelectorAll('.sidebar .filter-chip').forEach(c=>{
+      const t=c.getAttribute('onclick')||'';
+      if(t.includes(`'${dim}'`)&&!t.includes(`'${val}'`))c.classList.remove('sel');
+    });
+  }
+  el.classList.toggle('sel',(dim==='priority'&&val==='all')||(activeF[dim]===val));
+  document.querySelectorAll('#oq-list .oq-card').forEach((card,i)=>{
+    const o=OQS[i];let vis=true;
+    if(activeF.priority&&activeF.priority!=='all'&&o.priority!==activeF.priority)vis=false;
+    if(activeF.type&&o.type!==activeF.type)vis=false;
+    if(activeF.route&&o.route!=='経路'+activeF.route)vis=false;
+    if(activeF.status&&o.status!==activeF.status)vis=false;
+    card.style.display=vis?'':'none';
+  });
+}
+
+const TYPE_JP={'internal contradiction':'内部矛盾','cross-statute conflict':'法令間の抵触','lacuna':'法の欠缺（規定なし）','anachronism':'現行法未想定'};
+
+function openWS(idx){
+  curOQ=idx;curOpt=-1;
+  const o=OQS[idx];
+  document.getElementById('ws-tab').style.display='';
+  const realNote=o.verified?`<div class="banner banner-warn"><strong>実際に確認された事例：</strong> ${o.real_impact}</div>`:'';
+  const resolvedNote=o.status==='resolved'?`<div class="banner banner-ok">✓ 解決済み — カタログ登録 BOSAI-CAT-001 承認・運用中</div>`:'';
+  const p1note=(o.priority==='P1'&&o.status!=='resolved')?`<div class="banner banner-warn">⚠ P1（対応必須） — この論点が解決するまでAIエージェントの実運用は開始できません。Cedarポリシーの承認には上申（エスカレーション）が必要です。</div>`:'';
+  const cvnote=(o.id==='OQ-BOSAI-003')?`<div class="banner banner-info">CATALOG_VERSION_CONFLICT（登録失効）— DR-CAPRRS-INTERP-01 §Yの「法令優先ルール」により自動的に発生</div>`:'';
+  const opts=o.options.map((op,i)=>`<div class="opt-card" id="opt-${i}" onclick="selOpt(${i})"><div class="opt-label">${op.label}</div><div class="opt-text">${op.text}</div><div class="opt-consequence">${op.consequence}</div></div>`).join('');
+  const cedarBlock=o.cedar?`<div class="section-label">提案されたCedarポリシー</div><div class="cedar-wrap" id="cedar-blk" style="display:${o.status==='resolved'?'block':'none'}"><div class="cedar-label">${o.status==='resolved'?'Cedarポリシー・承認済み':'Cedarポリシー・承認待ち'}</div><div class="cedar-code">${o.cedar}</div></div>${o.status!=='resolved'?`<div style="font-size:12px;color:#aaa;padding:4px 0 12px">上記から解決オプションを選択すると、Cedarポリシー案が表示されます。</div>`:''}`:'';
+  const actions=o.status!=='resolved'?`<div class="action-row"><button class="btn-pri" onclick="resolveOQ()">解決策を提出 ↗</button><button class="btn-sec" onclick="escalate()">${o.priority==='P1'?'内閣法制局':'所管省庁'}へ上申 →</button></div>`:`<div style="font-size:12px;color:#1A6B3C;padding-top:8px">✓ 解決済み · Cedarポリシー承認済み · カタログ登録 BOSAI-CAT-001 運用中</div>`;
+  const rbLabel=`<span style="font-size:11px;font-family:monospace;background:#f0f0ef;padding:2px 7px;border-radius:4px;color:#555">${o.resolution_basis}</span>`;
+  document.getElementById('ws-content').innerHTML=`
+    <div class="workspace">
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
+        <span class="oq-id">${o.id}</span>
+        <span class="badge bp${o.priority[1]}">${o.priority}</span>
+        <span class="badge ${o.type==='internal contradiction'?'binternal':o.type==='cross-statute conflict'?'bconflict':o.type==='lacuna'?'blacuna':'banachronism'}">${TYPE_JP[o.type]||o.type}</span>
+        <span class="route-badge">${o.route}</span>
+        ${o.verified?'<span class="real-badge">✓ 実例確認済み</span>':''}
+      </div>
+      <div class="ws-title">${o.title}</div>
+      <div class="ws-meta">${o.ministry} · ${o.route_class} · 解決根拠: ${rbLabel}</div>
+      ${realNote}${p1note}${cvnote}${resolvedNote}
+      <div class="statute-block"><div class="statute-label">根拠となる条文</div><div class="statute-text">${o.statute}</div><div class="statute-ref">${o.statute_ref}</div></div>
+      <div class="conflict-arrow">⇕</div>
+      <div class="statute-block conflict-block"><div class="statute-label" style="color:#A32D2D">抵触・欠缺している条文</div><div class="statute-text">${o.conflict_statute}</div><div class="statute-ref">${o.conflict_ref}</div></div>
+      <div class="section-label">抵触の具体的なメカニズム</div>
+      <div class="exact-conflict">${o.exact_conflict}</div>
+      <div class="section-label">AI分析 — SOOS / CAP-RRSモデルによる整理</div>
+      <div id="ai-box" class="ai-loading"><div class="dots"><span></span><span></span><span></span></div><span>SOOS CAP-RRSモデルと照合分析中...</span></div>
+      <div class="section-label">解決オプション</div>
+      <div class="options-grid">${opts}</div>
+      ${cedarBlock}
+      ${actions}
+    </div>`;
+  show('workspace');
+  loadAI(idx);
+}
+
+async function loadAI(idx){
+  const o=OQS[idx];
+  const box=document.getElementById('ai-box');
+  if(!box)return;
+  try{
+    const r=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-6',max_tokens:1000,
+        system:`あなたはSOOS（Sovereign Object OS）プロジェクトの法務・技術アナリストで、内閣府のLaw as Code構想（本丸テーマ22）における防災法令の抵触・欠缺について助言しています。読み手は法律や技術の専門家ではない政府職員です。平易な日本語で、専門用語は最小限にして、3〜4文で次の内容を説明してください：(1) この論点が実務上なぜ重要か（一言で）、(2) SOOSの枠組みでどう整理されるか（法令優先ルール／内部矛盾の解消／複数法令の調整、のいずれか）、(3) 経路分類（経路A＝既存法で対応可、経路B＝解釈で対応可、経路C＝法改正が必要）とその理由、(4) 承認が必要な機関はどこか。前置きや見出しは不要。専門用語（Cedar、SOOS、CAP-RRSなど）を使う場合は一度だけ簡単に説明を添えること。`,
+        messages:[{role:'user',content:`論点: ${o.title}\n種別: ${TYPE_JP[o.type]||o.type}\n抵触の内容: ${o.exact_conflict}\n解決根拠: ${o.resolution_basis}\n所管: ${o.ministry}`}]
+      })
+    });
+    const d=await r.json();
+    const t=d.content?.find(b=>b.type==='text')?.text||'Analysis unavailable.';
+    const box2=document.getElementById('ai-box');
+    if(box2)box2.innerHTML=`<div style="font-size:13px;color:#1a1a1a;line-height:1.7">${t}</div>`;
+  }catch(e){
+    const box2=document.getElementById('ai-box');
+    if(box2)box2.innerHTML=`<div style="font-size:13px;color:#888">AI分析を利用できません — ネットワーク接続をご確認ください。</div>`;
+  }
+}
+
+function selOpt(i){
+  curOpt=i;
+  document.querySelectorAll('.opt-card').forEach((c,j)=>c.classList.toggle('sel',j===i));
+  const cb=document.getElementById('cedar-blk');
+  if(cb)cb.style.display='block';
+}
+
+function resolveOQ(){
+  if(curOpt<0){alert('先に解決オプションを選択してください。');return;}
+  const o=OQS[curOQ];
+  const opt=o.options[curOpt];
+  alert(`解決策を提出しました：\n\n${o.id} → ${opt.label}\n解決根拠: ${o.resolution_basis}\n\n本番環境では、これによりDR（決定記録）がクローズされ、CAP-RRSカタログ項目が承認待ちキューに登録されます。`);
+}
+
+function escalate(){
+  const o=OQS[curOQ];
+  alert(`${o.id} の上申文書案を作成しました\n宛先：${o.priority==='P1'?'内閣法制局長官':'所管省庁法令担当部局長'}\n\n本番環境では、法令間の抵触内容、SOOSのPROHIBITION_BOTTLENECK（許可の隘路）分類、必要な承認根拠を記載した日本語の上申文書が自動生成されます。`);
+}
+</script>
+</body>
+</html>
