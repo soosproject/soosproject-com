@@ -1,0 +1,1651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Seattle M7.2 — SOOS Agentic Governance Demo</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/tabler-icons.min.css">
+<style>
+:root {
+  --bg0:#090F0D; --bg1:#0E1714; --bg2:#11201B; --bg3:#16241F;
+  --bd:#1C2B26; --bd2:#28403A;
+  --t0:#EAF4F0; --t1:#C8D6D0; --t2:#8AA39B; --t3:#5E7771;
+  --green:#3FE3AC; --amber:#F0A93C; --red:#F0584F; --blue:#5BA3E0; --purple:#A78BFA;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;background:var(--bg0);color:var(--t1);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+  font-size:13px;overflow:hidden;}
+
+/* TOP BAR */
+#topbar{display:flex;align-items:center;justify-content:space-between;
+  padding:0 16px;height:52px;background:var(--bg1);border-bottom:1px solid var(--bd);gap:12px;}
+#scenario-label{font-size:10.5px;color:var(--t3);}
+#scenario-title{font-size:12.5px;font-weight:600;color:var(--t0);margin-top:1px;}
+#clock-block{text-align:center;flex-shrink:0;}
+#clock{font-size:26px;font-weight:700;letter-spacing:2px;color:var(--green);
+  font-family:"SF Mono",Consolas,monospace;font-variant-numeric:tabular-nums;}
+#clock-sub{font-size:10px;color:var(--t3);margin-top:1px;}
+#controls{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+#play-btn{background:var(--bg3);border:1px solid var(--bd2);color:var(--green);
+  border-radius:8px;padding:6px 14px;cursor:pointer;font-size:12px;
+  display:flex;align-items:center;gap:5px;transition:background .15s;font-family:inherit;}
+#play-btn:hover{background:var(--bd2);}
+.speed-badge{background:#1A2E27;color:var(--amber);font-size:11px;
+  padding:3px 8px;border-radius:6px;font-weight:600;border:1px solid #2A4030;}
+.soos-badge{background:#12201A;color:var(--green);font-size:10px;
+  padding:3px 8px;border-radius:6px;border:1px solid var(--bd2);}
+
+/* TAB BAR */
+#tabbar{display:flex;align-items:stretch;height:38px;background:var(--bg1);
+  border-bottom:1px solid var(--bd);padding:0 12px;gap:2px;}
+.tab{display:flex;align-items:center;gap:6px;padding:0 14px;font-size:11.5px;
+  color:var(--t3);cursor:pointer;border-bottom:2px solid transparent;
+  transition:color .15s;white-space:nowrap;user-select:none;}
+.tab:hover{color:var(--t1);}
+.tab.active{color:var(--green);border-bottom-color:var(--green);}
+.tab-num{font-size:10px;opacity:0.6;}
+
+/* DATA SOURCE */
+#datasource{height:24px;background:var(--bg0);border-bottom:1px solid var(--bd);
+  display:flex;align-items:center;padding:0 16px;gap:10px;font-size:10px;color:var(--t3);}
+#progress-bar-wrap{height:2px;background:var(--bd);}
+#progress-bar{height:100%;background:var(--green);width:0%;transition:width .08s;}
+
+/* CONTENT */
+#content-area{display:flex;height:calc(100vh - 52px - 38px - 24px - 2px - 28px);overflow:hidden;}
+.screen{display:none;width:100%;height:100%;flex-direction:row;}
+.screen.active{display:flex;}
+.col-main{flex:1.8;padding:12px;overflow-y:auto;border-right:1px solid var(--bd);}
+.col-ai{flex:1;padding:12px;overflow-y:auto;border-right:1px solid var(--bd);background:var(--bg0);}
+.col-hem{flex:1;padding:12px;overflow-y:auto;background:var(--bg0);}
+.col-header{font-size:10px;color:var(--t3);margin-bottom:10px;padding-bottom:6px;
+  border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:6px;
+  text-transform:uppercase;letter-spacing:0.5px;}
+
+/* STATUS BAR */
+#statusbar{height:28px;background:var(--bg1);border-top:1px solid var(--bd);
+  display:flex;align-items:center;padding:0 16px;gap:20px;font-size:10px;color:var(--t3);}
+.sb-item{display:flex;align-items:center;gap:5px;}
+.sb-dot{width:6px;height:6px;border-radius:50%;}
+
+/* SEISMOGRAPH */
+#seismo-wrap{background:var(--bg2);border:1px solid var(--bd);border-radius:10px;
+  padding:10px;margin-bottom:10px;}
+#seismo-hdr{display:flex;justify-content:space-between;align-items:center;
+  font-size:11px;color:var(--t2);margin-bottom:7px;}
+#seismo-canvas{width:100%;height:96px;display:block;border-radius:6px;background:#060E0B;}
+
+/* CARDS */
+@keyframes cardIn{from{opacity:0;transform:translateY(-6px);}to{opacity:1;transform:none;}}
+.jma-card{background:var(--bg2);border:1px solid var(--bd);border-radius:10px;
+  padding:10px 12px;margin-bottom:8px;border-left:3px solid var(--bd2);animation:cardIn .4s ease;}
+.jma-card.sev-high{border-left-color:var(--red);}
+.jma-card.sev-mid{border-left-color:var(--amber);}
+.jma-card.sev-watch{border-left-color:var(--blue);}
+.jma-time{font-size:10px;color:var(--t3);margin-bottom:3px;}
+.jma-title{font-size:13px;font-weight:600;color:var(--t0);}
+.jma-body{font-size:11px;color:var(--t2);margin-top:4px;line-height:1.5;}
+.jma-mag{font-size:20px;font-weight:700;color:var(--red);margin-right:6px;}
+
+.ai-entry{padding:7px 8px;border-radius:8px;margin-bottom:6px;
+  border-left:2px solid var(--bd2);background:var(--bg2);animation:cardIn .3s ease;}
+.ai-entry-time{font-size:9.5px;color:var(--t3);margin-bottom:2px;}
+.ai-entry-agent{font-size:10px;font-weight:600;margin-bottom:2px;}
+.ai-entry-text{font-size:11px;color:var(--t2);line-height:1.4;}
+.ag-seismic{color:var(--blue);border-left-color:var(--blue);}
+.ag-master{color:var(--green);border-left-color:var(--green);}
+.ag-sim{color:var(--purple);border-left-color:var(--purple);}
+.ag-local{color:var(--amber);border-left-color:var(--amber);}
+
+.hem-card{background:var(--bg2);border:1px solid var(--bd);border-radius:10px;
+  padding:10px 11px;margin-bottom:8px;animation:cardIn .4s ease;}
+.hem-card.pending{border-left:3px solid var(--amber);}
+.hem-card.resolved{border-left:3px solid var(--green);opacity:.85;}
+.hem-card.escalated{border-left:3px solid var(--red);}
+.hem-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;}
+.hem-id{font-size:9.5px;color:var(--t3);font-weight:600;}
+.hem-badge{font-size:9px;padding:2px 6px;border-radius:4px;font-weight:600;}
+.hem-badge.pending{background:#2A2000;color:var(--amber);}
+.hem-badge.resolved{background:#0D2A1E;color:var(--green);}
+.hem-badge.escalated{background:#2A0C0A;color:var(--red);}
+.hem-q{font-size:11px;color:var(--t1);line-height:1.4;margin-bottom:5px;}
+.hem-to{font-size:10px;color:var(--t3);margin-bottom:4px;}
+.hem-resp{font-size:11px;color:var(--green);background:#0C2018;border-radius:6px;
+  padding:5px 7px;margin-top:5px;line-height:1.4;}
+@keyframes pulseDot{0%,100%{opacity:1}50%{opacity:.3}}
+.hem-pulse{display:inline-block;width:6px;height:6px;border-radius:50%;
+  background:var(--amber);margin-right:5px;animation:pulseDot 1.1s ease-in-out infinite;}
+
+/* AGENT PILLS */
+.agent-row{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:10px;}
+.agent-pill{display:flex;align-items:center;gap:5px;padding:4px 9px;
+  border-radius:20px;border:1px solid var(--bd);font-size:10.5px;
+  background:var(--bg2);color:var(--t3);}
+.agent-pill.online{color:var(--green);border-color:#1F5C49;background:#0C2018;}
+.agent-pill.active{color:var(--amber);border-color:#3D3000;animation:pulseDot 1s infinite;}
+.agent-pill-dot{width:6px;height:6px;border-radius:50%;background:currentColor;}
+
+/* MMI BOARD */
+.shindo-board{background:var(--bg2);border:1px solid var(--bd);border-radius:10px;
+  padding:10px;margin-bottom:10px;}
+.shindo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px;}
+.shindo-cell{background:var(--bg3);border-radius:7px;padding:7px;text-align:center;border:1px solid var(--bd);}
+.shindo-val{font-size:16px;font-weight:700;}
+.shindo-loc{font-size:9.5px;color:var(--t3);margin-top:2px;}
+.s7{color:#FF2020;} .s6s{color:var(--red);} .s6w{color:#FF6040;} .s5s{color:var(--amber);} .s4{color:#D4C020;}
+
+/* MISC PANELS */
+.panel{background:var(--bg2);border:1px solid var(--bd);border-radius:10px;padding:11px;margin-bottom:10px;}
+.panel-h{font-size:11px;color:var(--t2);margin-bottom:8px;display:flex;align-items:center;gap:5px;}
+.news-item{padding:5px 8px;border-radius:6px;margin-bottom:4px;border-left:2px solid;
+  background:var(--bg3);font-size:11px;animation:cardIn .3s ease;}
+.inf-row{display:flex;align-items:center;gap:8px;padding:8px 9px;background:var(--bg3);
+  border:1px solid var(--bd);border-left:3px solid;border-radius:8px;margin-bottom:5px;}
+
+/* MAP */
+.map-panel{background:var(--bg2);border:1px solid var(--bd);border-radius:10px;padding:11px;margin-bottom:10px;}
+@keyframes expandRing{from{r:0;opacity:.8;}to{r:260;opacity:0;}}
+.ring-anim{animation:expandRing 3.5s ease-out infinite;}
+.ring-anim2{animation:expandRing 3.5s ease-out infinite;animation-delay:.7s;}
+.ring-anim3{animation:expandRing 3.5s ease-out infinite;animation-delay:1.4s;}
+@keyframes epicPulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+.epi-pulse{animation:epicPulse 1.4s ease-in-out infinite;}
+
+/* DMG GRID */
+.dmg-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:10px;}
+.dmg-card{background:var(--bg2);border:1px solid var(--bd);border-radius:9px;padding:9px 10px;text-align:center;}
+.dmg-card.crit{border-left:3px solid var(--red);}
+.dmg-card.warn{border-left:3px solid var(--amber);}
+.dmg-val{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums;font-family:"SF Mono",Consolas,monospace;}
+.dmg-lbl{font-size:9.5px;color:var(--t3);margin-top:2px;}
+.dmg-sub{font-size:10px;color:var(--t2);margin-top:3px;}
+
+/* INFRA */
+.infra-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:10px;}
+.infra-card{background:var(--bg2);border:1px solid var(--bd);border-radius:10px;
+  padding:10px 12px;position:relative;overflow:hidden;transition:border-color .3s;}
+.infra-card.status-green{border-left:3px solid var(--green);}
+.infra-card.status-amber{border-left:3px solid var(--amber);}
+.infra-card.status-red{border-left:3px solid var(--red);}
+.infra-card.status-black{border-left:3px solid #888;opacity:.7;}
+.ic-hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;}
+.ic-name{font-size:12px;font-weight:600;color:var(--t0);}
+.ic-cat{font-size:9.5px;color:var(--t3);margin-top:1px;}
+.ic-badge{font-size:9.5px;padding:2px 7px;border-radius:4px;font-weight:700;flex-shrink:0;letter-spacing:.3px;}
+.ic-badge.green{background:#0D2A1E;color:var(--green);}
+.ic-badge.amber{background:#2A1E00;color:var(--amber);}
+.ic-badge.red{background:#2A0C0A;color:var(--red);}
+.ic-row{display:flex;gap:12px;margin-bottom:5px;flex-wrap:wrap;}
+.ic-stat{font-size:10px;color:var(--t3);}
+.ic-stat span{color:var(--t1);font-weight:500;margin-left:3px;}
+.ic-update{font-size:10px;color:var(--t2);margin-top:5px;line-height:1.5;border-top:1px solid var(--bd);padding-top:5px;}
+.ic-recovery{display:flex;align-items:center;gap:6px;margin-top:5px;}
+.ic-rec-bar{flex:1;height:4px;background:var(--bd);border-radius:2px;overflow:hidden;}
+.ic-rec-fill{height:100%;border-radius:2px;transition:width 1s ease;background:var(--green);}
+.ic-rec-lbl{font-size:9.5px;color:var(--t3);white-space:nowrap;}
+
+.infra-timeline{background:var(--bg2);border:1px solid var(--bd);border-radius:10px;padding:10px 12px;}
+.it-entry{display:flex;gap:8px;padding:5px 0;border-bottom:1px solid var(--bd);font-size:11px;animation:cardIn .35s ease;}
+.it-entry:last-child{border-bottom:none;}
+.it-time{color:var(--t3);font-size:9.5px;white-space:nowrap;padding-top:1px;min-width:44px;}
+.it-infra{font-weight:600;min-width:80px;font-size:10.5px;}
+.it-text{color:var(--t2);flex:1;line-height:1.4;}
+.it-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:4px;}
+
+.victim-stat{display:flex;justify-content:space-between;align-items:center;
+  padding:5px 8px;background:var(--bg3);border-radius:6px;margin-bottom:4px;font-size:11px;}
+.vs-lbl{color:var(--t3);}
+.vs-val{color:var(--t0);font-weight:600;font-variant-numeric:tabular-nums;}
+
+.push-benefit{display:flex;align-items:center;gap:8px;padding:7px 9px;
+  background:var(--bg2);border:1px solid var(--bd);border-radius:8px;margin-bottom:5px;animation:cardIn .4s ease;}
+.pb-icon{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
+.pb-body{flex:1;}
+.pb-title{font-size:11.5px;font-weight:500;color:var(--t0);}
+.pb-status{font-size:10px;color:var(--t3);margin-top:1px;}
+.pb-badge{font-size:9px;padding:2px 6px;border-radius:4px;font-weight:600;flex-shrink:0;}
+.pb-badge.ready{background:#0D2A1E;color:var(--green);}
+.pb-badge.pending{background:#2A2000;color:var(--amber);}
+.pb-badge.auto{background:#0A1A2E;color:var(--blue);}
+
+/* phase timeline bar */
+.phase-bar{display:flex;gap:3px;margin:8px 0;height:18px;}
+.phase-seg{flex:1;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:600;}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div id="topbar">
+  <div>
+    <div id="scenario-label">SOOS Agentic Governance Demo ｜ Seattle Fault Zone ｜ October 19, 2026 — 2:47 AM</div>
+    <div id="scenario-title">M7.2 Seattle Fault — Downtown Seattle Epicenter / SOOS Governance Layer Active</div>
+  </div>
+  <div id="clock-block">
+    <div id="clock">T−01:00</div>
+    <div id="clock-sub">Scenario time (variable speed)</div>
+  </div>
+  <div id="controls">
+    <span class="soos-badge"><i class="ti ti-shield-check"></i> SOOS v3.0 ｜ WebEOC ｜ HAZUS AI</span>
+    <span class="speed-badge" id="speed-lbl">×6</span>
+    <button id="play-btn" onclick="togglePlay()">
+      <i class="ti ti-player-play" id="play-icon"></i>
+      <span id="play-label">▶ Start</span>
+    </button>
+  </div>
+</div>
+
+<!-- TAB BAR -->
+<div id="tabbar">
+  <div class="tab active" onclick="switchTab(1)"><span class="tab-num">01</span><i class="ti ti-activity"></i> Seismic Detection</div>
+  <div class="tab" onclick="switchTab(2)"><span class="tab-num">02</span><i class="ti ti-map-2"></i> Damage Simulation</div>
+  <div class="tab" onclick="switchTab(3)"><span class="tab-num">03</span><i class="ti ti-building-bank"></i> Command Structure</div>
+  <div class="tab" onclick="switchTab(4)"><span class="tab-num">04</span><i class="ti ti-broadcast"></i> Media Response</div>
+  <div class="tab" onclick="switchTab(5)"><span class="tab-num">05</span><i class="ti ti-home-heart"></i> Citizen Relief</div>
+  <div class="tab" onclick="switchTab(6)"><span class="tab-num">06</span><i class="ti ti-chart-bar"></i> Damage Status</div>
+  <div class="tab" onclick="switchTab(7)"><span class="tab-num">07</span><i class="ti ti-building-factory-2"></i> Critical Infrastructure</div>
+</div>
+
+<div id="datasource">
+  <span>Data sources:</span>
+  <span id="ds-txt">ShakeAlert (USGS) ｜ PNSN Strong Motion ｜ WebEOC ｜ King County KCEOC EEI</span>
+</div>
+<div id="progress-bar-wrap"><div id="progress-bar"></div></div>
+
+<!-- CONTENT AREA -->
+<div id="content-area">
+
+<!-- ══ SCREEN 1: Seismic Detection ═══════════════════════════════ -->
+<div class="screen active" id="screen-1">
+  <div class="col-main">
+    <div class="col-header"><i class="ti ti-activity"></i> Seismic Detection / ShakeAlert
+      <span id="s1-phase" style="margin-left:auto;font-size:10px;color:var(--amber);"></span></div>
+    <div id="seismo-wrap">
+      <div id="seismo-hdr">
+        <span><i class="ti ti-wave-sine"></i> Strong Motion Monitor — PNSN Station SEA (Seattle) ｜ Acceleration Waveform</span>
+        <span id="seismo-status" style="color:var(--green);">● Monitoring</span>
+      </div>
+      <canvas id="seismo-canvas"></canvas>
+    </div>
+    <div class="agent-row" id="agent-row">
+      <div class="agent-pill" id="pill-seismic"><span class="agent-pill-dot"></span>Seismic Monitor AI</div>
+      <div class="agent-pill" id="pill-master"><span class="agent-pill-dot"></span>Master AI</div>
+      <div class="agent-pill" id="pill-sim"><span class="agent-pill-dot"></span>Simulation AI</div>
+      <div class="agent-pill" id="pill-local"><span class="agent-pill-dot"></span>Local AI Network</div>
+    </div>
+    <div id="jma-feed"></div>
+    <div class="shindo-board" id="shindo-board" style="display:none;">
+      <div class="col-header" style="margin-bottom:0;"><i class="ti ti-activity"></i> MMI Intensity by District (ShakeAlert ｜ Estimated)</div>
+      <div class="shindo-grid" id="shindo-grid"></div>
+    </div>
+  </div>
+  <div class="col-ai">
+    <div class="col-header"><i class="ti ti-robot"></i> AI Agent Activity Log</div>
+    <div id="s1-ai"></div>
+  </div>
+  <div class="col-hem">
+    <div class="col-header"><i class="ti ti-alert-triangle"></i> HEM / Governance Decisions</div>
+    <div id="s1-hem"></div>
+  </div>
+</div>
+
+<!-- ══ SCREEN 2: Damage Simulation ══════════════════════════════ -->
+<div class="screen" id="screen-2">
+  <div class="col-main">
+    <div class="col-header"><i class="ti ti-map-2"></i> Damage Simulation / HAZUS AI Output</div>
+    <div id="s2-main"><div style="color:var(--t3);text-align:center;padding:30px;font-size:12px;">
+      <i class="ti ti-clock" style="font-size:24px;display:block;margin-bottom:8px;"></i>
+      Simulation AI activates after T+2:00</div></div>
+  </div>
+  <div class="col-ai">
+    <div class="col-header"><i class="ti ti-robot"></i> AI Agent Activity Log</div>
+    <div id="s2-ai"></div>
+  </div>
+  <div class="col-hem">
+    <div class="col-header"><i class="ti ti-alert-triangle"></i> HEM / Governance Decisions</div>
+    <div id="s2-hem"></div>
+  </div>
+</div>
+
+<!-- ══ SCREEN 3: Command Structure ══════════════════════════════ -->
+<div class="screen" id="screen-3">
+  <div class="col-main">
+    <div class="col-header"><i class="ti ti-building-bank"></i> Command Structure / Stafford Act + RCW 38.52</div>
+    <div id="s3-main"><div style="color:var(--t3);text-align:center;padding:30px;font-size:12px;">
+      <i class="ti ti-clock" style="font-size:24px;display:block;margin-bottom:8px;"></i>
+      Command structure assembles after T+8:00</div></div>
+  </div>
+  <div class="col-ai">
+    <div class="col-header"><i class="ti ti-robot"></i> AI Agent Activity Log</div>
+    <div id="s3-ai"></div>
+  </div>
+  <div class="col-hem">
+    <div class="col-header"><i class="ti ti-alert-triangle"></i> HEM / Governance Decisions</div>
+    <div id="s3-hem"></div>
+  </div>
+</div>
+
+<!-- ══ SCREEN 4: Media Response ══════════════════════════════════ -->
+<div class="screen" id="screen-4">
+  <div class="col-main">
+    <div class="col-header"><i class="ti ti-broadcast"></i> Media Response / IPAWS + Local Broadcast</div>
+    <div id="s4-main"><div style="color:var(--t3);text-align:center;padding:30px;font-size:12px;">
+      <i class="ti ti-clock" style="font-size:24px;display:block;margin-bottom:8px;"></i>
+      Media response activates at T+0:00</div></div>
+  </div>
+  <div class="col-ai">
+    <div class="col-header"><i class="ti ti-robot"></i> AI Agent Activity Log</div>
+    <div id="s4-ai"></div>
+  </div>
+  <div class="col-hem">
+    <div class="col-header"><i class="ti ti-alert-triangle"></i> HEM / Governance Decisions</div>
+    <div id="s4-hem"></div>
+  </div>
+</div>
+
+<!-- ══ SCREEN 5: Citizen Relief ═══════════════════════════════════ -->
+<div class="screen" id="screen-5">
+  <div class="col-main" style="flex:2.2;">
+    <div class="col-header"><i class="ti ti-home-heart"></i> Citizen Relief / FEMA Individual Assistance
+      <span id="s5-conf" style="margin-left:auto;font-size:9.5px;color:var(--purple);font-weight:600;">🤖 Purple = HAZUS AI Estimate (Unconfirmed)</span></div>
+    <div style="background:#1A1030;border:1px solid var(--purple);border-radius:8px;padding:8px 12px;margin-bottom:10px;display:flex;align-items:center;gap:10px;">
+      <span style="font-size:18px;">🤖</span>
+      <div>
+        <div style="font-size:11px;font-weight:600;color:var(--purple);">HAZUS AI Estimates — Not Confirmed Data</div>
+        <div style="font-size:10px;color:#9B7FE8;margin-top:2px;">
+          Purple figures are HAZUS model projections (±15%). Actual fatalities, injuries, and building damage counts will not be confirmed until field surveys are completed.
+          No confirmed casualty figures are available within 60 minutes of the event. Commanders should treat AI estimates as planning references only.
+        </div>
+      </div>
+    </div>
+    <div class="dmg-grid" id="s5-dmg-grid">
+      <div class="dmg-card" style="border-color:var(--purple);background:#120D20;">
+        <div class="dmg-val" id="dc-bldgs" style="color:var(--purple);">—</div>
+        <div class="dmg-lbl" style="color:#9B7FE8;">Buildings Destroyed <span style="font-size:9px;background:#2A1A4A;padding:1px 5px;border-radius:3px;color:var(--purple);">AI Est.</span></div>
+        <div class="dmg-sub" id="dc-bldgsS" style="color:#7A6BA8;"></div>
+      </div>
+      <div class="dmg-card" style="border-color:var(--purple);background:#120D20;">
+        <div class="dmg-val" id="dc-dmgd" style="color:var(--purple);">—</div>
+        <div class="dmg-lbl" style="color:#9B7FE8;">Buildings Damaged <span style="font-size:9px;background:#2A1A4A;padding:1px 5px;border-radius:3px;color:var(--purple);">AI Est.</span></div>
+        <div class="dmg-sub" id="dc-dmgdS" style="color:#7A6BA8;"></div>
+      </div>
+      <div class="dmg-card" style="border-color:var(--purple);background:#120D20;">
+        <div class="dmg-val" id="dc-fatal" style="color:var(--purple);">—</div>
+        <div class="dmg-lbl" style="color:#9B7FE8;">Fatalities Est. <span style="font-size:9px;background:#2A1A4A;padding:1px 5px;border-radius:3px;color:var(--purple);">AI Est.</span></div>
+        <div class="dmg-sub" id="dc-fatalS" style="color:#7A6BA8;">No confirmed data — HAZUS estimate only</div>
+      </div>
+      <div class="dmg-card" style="border-color:var(--purple);background:#120D20;">
+        <div class="dmg-val" id="dc-inj" style="color:var(--purple);">—</div>
+        <div class="dmg-lbl" style="color:#9B7FE8;">Injuries Est. <span style="font-size:9px;background:#2A1A4A;padding:1px 5px;border-radius:3px;color:var(--purple);">AI Est.</span></div>
+        <div class="dmg-sub" id="dc-injS" style="color:#7A6BA8;">Serious / Minor</div>
+      </div>
+    </div>
+    <div class="panel" id="s5-relief-panel" style="display:none;">
+      <div class="panel-h"><i class="ti ti-route"></i> Citizen Relief Flow / FEMA Individual Assistance Pathway</div>
+      <div style="font-size:10px;color:var(--t3);margin-bottom:8px;">Stafford Act §408 ｜ RCW 38.52 ｜ WA CEMP 2024 — Self-Sufficiency Minimum 14 Days</div>
+      <div id="s5-relief-content"></div>
+    </div>
+  </div>
+  <div class="col-ai">
+    <div class="col-header"><i class="ti ti-robot"></i> AI Agent Activity Log</div>
+    <div id="s5-ai"></div>
+  </div>
+  <div class="col-hem">
+    <div class="col-header"><i class="ti ti-alert-triangle"></i> HEM / Governance Decisions</div>
+    <div id="s5-hem"></div>
+    <div style="margin-top:12px;">
+      <div class="col-header" style="margin-bottom:8px;"><i class="ti ti-users"></i> Population Impact Counter</div>
+      <div>
+        <div class="victim-stat"><span class="vs-lbl">Confirmed Shelter (Known)</span><span class="vs-val" id="vsc-shelter">—</span></div>
+        <div class="victim-stat"><span class="vs-lbl">Search & Rescue Pending</span><span class="vs-val" id="vsc-rescue">—</span></div>
+        <div class="victim-stat"><span class="vs-lbl">Medical Transport (Cumul.)</span><span class="vs-val" id="vsc-med">—</span></div>
+        <div class="victim-stat"><span class="vs-lbl">Displaced Households (Est.)</span><span class="vs-val" id="vsc-disp">—</span></div>
+        <div class="victim-stat"><span class="vs-lbl">Without Power (Est.)</span><span class="vs-val" id="vsc-power">—</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SCREEN 6: Damage Status ═══════════════════════════════════ -->
+<div class="screen" id="screen-6">
+  <div class="col-main">
+    <div class="col-header"><i class="ti ti-chart-bar"></i> Damage Status / HAZUS AI Estimates by District</div>
+    <div id="s6-main"><div style="color:var(--t3);text-align:center;padding:30px;font-size:12px;">
+      <i class="ti ti-clock" style="font-size:24px;display:block;margin-bottom:8px;"></i>
+      HAZUS estimates populate after T+3:00</div></div>
+  </div>
+  <div class="col-ai">
+    <div class="col-header"><i class="ti ti-robot"></i> AI Agent Activity Log</div>
+    <div id="s6-ai"></div>
+  </div>
+  <div class="col-hem">
+    <div class="col-header"><i class="ti ti-alert-triangle"></i> HEM / Governance Decisions</div>
+    <div id="s6-hem"></div>
+  </div>
+</div>
+
+<!-- ══ SCREEN 7: Critical Infrastructure ════════════════════════ -->
+<div class="screen" id="screen-7">
+  <div class="col-main" style="flex:2.4;">
+    <div class="col-header"><i class="ti ti-building-factory-2"></i> Critical Infrastructure Status
+      <span id="s7-updated" style="margin-left:auto;font-size:9.5px;color:var(--t3);">Simulation AI monitoring</span></div>
+
+    <div class="infra-grid" id="s7-grid">
+
+      <!-- Card 1: Pioneer Square -->
+      <div class="infra-card status-red" id="ic-pioneer">
+        <div class="ic-hdr">
+          <div><div class="ic-name">⚠ Pioneer Square (URM)</div>
+            <div class="ic-cat">Unreinforced Masonry — MMI IX Zone — Collapse Risk</div></div>
+          <div class="ic-badge red" id="ic-pioneer-badge">COLLAPSE RISK</div>
+        </div>
+        <div class="ic-row">
+          <div class="ic-stat">MMI<span style="color:#FF2020;font-weight:700;">IX — Violent</span></div>
+          <div class="ic-stat">URM Buildings<span>~200 pre-1940</span></div>
+        </div>
+        <div class="ic-update" id="ic-pioneer-upd">T+0:00 — Unreinforced masonry structures in MMI IX zone. USGS scenario predicts 50-80% complete damage rate for pre-1940 URM. No human confirmation yet.</div>
+        <div class="ic-recovery">
+          <div class="ic-rec-bar"><div class="ic-rec-fill" id="ic-pioneer-bar" style="width:0%;background:var(--red);"></div></div>
+          <div class="ic-rec-lbl" id="ic-pioneer-rec">Unknown</div>
+        </div>
+      </div>
+
+      <!-- Card 2: Amazon HQ / SLU -->
+      <div class="infra-card status-red" id="ic-amazon">
+        <div class="ic-hdr">
+          <div><div class="ic-name">🏢 Amazon HQ / South Lake Union</div>
+            <div class="ic-cat">Private sector ｜ MMI IX ｜ ~55,000 employees ｜ AWS US-West-2</div></div>
+          <div class="ic-badge red" id="ic-amazon-badge">MMI IX ZONE</div>
+        </div>
+        <div class="ic-row">
+          <div class="ic-stat">MMI<span style="color:#FF2020;font-weight:700;">IX — Violent</span></div>
+          <div class="ic-stat">On Fault<span style="color:var(--red);">Direct rupture proximity</span></div>
+        </div>
+        <div class="ic-update" id="ic-amazon-upd">T+0:00 — Fault trace passes through SLU campus. AWS US-West-2 (Seattle region) likely offline. WebEOC disaster coordination platform status unknown.</div>
+        <div class="ic-recovery">
+          <div class="ic-rec-bar"><div class="ic-rec-fill" id="ic-amazon-bar" style="width:0%;background:var(--red);"></div></div>
+          <div class="ic-rec-lbl" id="ic-amazon-rec">Unknown</div>
+        </div>
+      </div>
+
+      <!-- Card 3: Port of Seattle / Harbor Island -->
+      <div class="infra-card status-red" id="ic-port">
+        <div class="ic-hdr">
+          <div><div class="ic-name">⚓ Port of Seattle / Harbor Island</div>
+            <div class="ic-cat">Port Authority ｜ MMI IX ｜ Tsunami + Liquefaction risk</div></div>
+          <div class="ic-badge red" id="ic-port-badge">TSUNAMI + LIQUEFACTION</div>
+        </div>
+        <div class="ic-row">
+          <div class="ic-stat">MMI<span style="color:#FF2020;">IX</span></div>
+          <div class="ic-stat">Tsunami ETA<span style="color:var(--red);">T+0 local</span></div>
+          <div class="ic-stat">Harbor Island Fill<span>Liquefaction likely</span></div>
+        </div>
+        <div class="ic-update" id="ic-port-upd">T+0:00 — Harbor Island on engineered fill — liquefaction expected. Elliott Bay tsunami arrival T+0:00 from local fault rupture. All vessels evacuation alert issued.</div>
+        <div class="ic-recovery">
+          <div class="ic-rec-bar"><div class="ic-rec-fill" id="ic-port-bar" style="width:0%;background:var(--red);"></div></div>
+          <div class="ic-rec-lbl" id="ic-port-rec">Tsunami Alert</div>
+        </div>
+      </div>
+
+      <!-- Card 4: Harborview Medical Center -->
+      <div class="infra-card status-amber" id="ic-harborview">
+        <div class="ic-hdr">
+          <div><div class="ic-name">🏥 Harborview Medical Center</div>
+            <div class="ic-cat">Designated DMCC ｜ Level I Trauma ｜ MMI VIII ｜ First Hill</div></div>
+          <div class="ic-badge amber" id="ic-harborview-badge">BCP LEVEL 2</div>
+        </div>
+        <div class="ic-row">
+          <div class="ic-stat">MMI<span style="color:var(--red);">VIII — Destructive</span></div>
+          <div class="ic-stat">Beds<span>413 + surge</span></div>
+          <div class="ic-stat">WA USAR TF1<span>Staging pending</span></div>
+        </div>
+        <div class="ic-update" id="ic-harborview-upd">T+0:00 — BCP auto-activated. Emergency power switching. Surgeries halted. Patient safety check underway. Per KC ESF-8: designated DMCC for this event.</div>
+        <div class="ic-recovery">
+          <div class="ic-rec-bar"><div class="ic-rec-fill" id="ic-harborview-bar" style="width:40%;background:var(--amber);"></div></div>
+          <div class="ic-rec-lbl" id="ic-harborview-rec">Partial ops</div>
+        </div>
+      </div>
+
+      <!-- Card 5: West Seattle Bridge -->
+      <div class="infra-card status-red" id="ic-wsb">
+        <div class="ic-hdr">
+          <div><div class="ic-name">⚠ West Seattle Bridge</div>
+            <div class="ic-cat">WSDOT ｜ MMI VIII ｜ ~100,000 residents isolated</div></div>
+          <div class="ic-badge red" id="ic-wsb-badge">CLOSED</div>
+        </div>
+        <div class="ic-row">
+          <div class="ic-stat">MMI<span style="color:var(--red);">VIII</span></div>
+          <div class="ic-stat">Authority<span>WSDOT (closure)</span></div>
+          <div class="ic-stat">Ferry Alt<span id="ic-wsb-ferry">Not yet authorized</span></div>
+        </div>
+        <div class="ic-update" id="ic-wsb-upd">T+0:00 — Seismic sensors triggered closure. ~100,000 West Seattle residents isolated. 4-authority coordination required: WSDOT + KC Metro + Port + SDOT.</div>
+        <div class="ic-recovery">
+          <div class="ic-rec-bar"><div class="ic-rec-fill" id="ic-wsb-bar" style="width:0%;background:var(--red);"></div></div>
+          <div class="ic-rec-lbl" id="ic-wsb-rec">Inspection required</div>
+        </div>
+      </div>
+
+      <!-- Card 6: I-90 Floating Bridge -->
+      <div class="infra-card status-amber" id="ic-i90">
+        <div class="ic-hdr">
+          <div><div class="ic-name">⚠ I-90 Floating Bridge</div>
+            <div class="ic-cat">WSDOT ｜ MMI VII ｜ Lake Washington crossing</div></div>
+          <div class="ic-badge amber" id="ic-i90-badge">INSPECTION</div>
+        </div>
+        <div class="ic-row">
+          <div class="ic-stat">MMI<span style="color:var(--amber);">VII</span></div>
+          <div class="ic-stat">SR-520<span id="ic-sr520">Also checking</span></div>
+        </div>
+        <div class="ic-update" id="ic-i90-upd">T+0:00 — Floating bridge seismic sensors triggered. Pontoon integrity unknown. Eastside access to Seattle via I-90 suspended pending inspection.</div>
+        <div class="ic-recovery">
+          <div class="ic-rec-bar"><div class="ic-rec-fill" id="ic-i90-bar" style="width:10%;background:var(--amber);"></div></div>
+          <div class="ic-rec-lbl" id="ic-i90-rec">Checking</div>
+        </div>
+      </div>
+
+    </div><!-- infra-grid -->
+
+    <div class="infra-timeline">
+      <div class="col-header" style="margin-bottom:6px;"><i class="ti ti-list-details"></i> Infrastructure Update Log ｜ Simulation AI Monitoring</div>
+      <div id="s7-timeline"></div>
+    </div>
+  </div>
+
+  <div class="col-ai">
+    <div class="col-header"><i class="ti ti-robot"></i> AI Agent Activity Log</div>
+    <div id="s7-ai"></div>
+  </div>
+
+  <div class="col-hem">
+    <div class="col-header"><i class="ti ti-alert-triangle"></i> HEM / Governance Decisions</div>
+    <div id="s7-hem"></div>
+    <div style="margin-top:12px;">
+      <div class="col-header" style="margin-bottom:8px;"><i class="ti ti-chart-bar"></i> Infrastructure Status Summary</div>
+      <div id="s7-summary">
+        <div class="victim-stat"><span class="vs-lbl">Electric Power (King Co.)</span><span class="vs-val" id="vs7-power" style="color:var(--red);">218,464 without</span></div>
+        <div class="victim-stat"><span class="vs-lbl">Potable Water (Est.)</span><span class="vs-val" id="vs7-water" style="color:var(--red);">333,000+ without</span></div>
+        <div class="victim-stat"><span class="vs-lbl">West Seattle Bridge</span><span class="vs-val" id="vs7-wsb" style="color:var(--red);">Closed</span></div>
+        <div class="victim-stat"><span class="vs-lbl">I-90 Floating Bridge</span><span class="vs-val" id="vs7-i90" style="color:var(--amber);">Inspection</span></div>
+        <div class="victim-stat"><span class="vs-lbl">Port of Seattle</span><span class="vs-val" id="vs7-port" style="color:var(--red);">Tsunami Alert</span></div>
+        <div class="victim-stat"><span class="vs-lbl">Harborview Medical</span><span class="vs-val" id="vs7-hosp" style="color:var(--amber);">Partial ops</span></div>
+        <div class="victim-stat"><span class="vs-lbl">WebEOC Platform</span><span class="vs-val" id="vs7-webeoc" style="color:var(--red);">AWS failure</span></div>
+        <div class="victim-stat"><span class="vs-lbl">Sea-Tac Airport</span><span class="vs-val" id="vs7-seatac" style="color:var(--amber);">Inspection</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- #content-area -->
+
+<!-- STATUS BAR -->
+<div id="statusbar">
+  <div class="sb-item"><span class="sb-dot" style="background:var(--green);"></span><span id="sb-agents">Agents: Seismic Monitor AI standby</span></div>
+  <div class="sb-item"><span class="sb-dot" id="sb-hem-dot" style="background:var(--t3);"></span><span id="sb-hem">HEM: 0</span></div>
+  <div class="sb-item"><span class="sb-dot" id="sb-phase-dot" style="background:var(--t3);"></span><span id="sb-phase">Phase: Pre-event | Normal</span></div>
+  <div class="sb-item" style="margin-left:auto;"><span style="color:var(--t3);">GAR records:</span><span id="sb-gar" style="color:var(--green);margin-left:5px;">0</span></div>
+</div>
+
+<script>
+// ══ CLOCK ENGINE ══════════════════════════════════════════════
+// 6-hour scenario (21,600 seconds)
+// Phase 1: T-60 → T+0 : speed x6  (slow — visceral shock)
+// Phase 2: T+0 → T+5400 (T+90min): speed x30
+// Phase 3: T+5400 → T+21600 (T+6h): speed x60
+const T_START = -60, T_END = 21600;
+let scenarioTime = T_START, lastTs = null, running = false;
+let garCount = 0, hemPending = 0;
+
+function getSpeed(t) {
+  if (t < 0) return 6;
+  if (t < 5400) return 30;
+  return 60;
+}
+
+function fmtClock(s) {
+  const neg = s < 0; const a = Math.abs(s);
+  const h = Math.floor(a / 3600);
+  const m = Math.floor((a % 3600) / 60); const sc = Math.floor(a % 60);
+  if (h > 0) return (neg ? 'T−' : 'T+') + String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0') + ':' + String(sc).padStart(2,'0');
+  return (neg ? 'T−' : 'T+') + String(m).padStart(2,'0') + ':' + String(sc).padStart(2,'0');
+}
+
+function updateSpeedBadge(t) {
+  const sp = getSpeed(t);
+  const el = document.getElementById('speed-lbl');
+  if (el) el.textContent = '×' + sp;
+  const sub = document.getElementById('clock-sub');
+  if (sub) {
+    if (t < 0) sub.textContent = 'Scenario time (×6 — impact phase)';
+    else if (t < 5400) sub.textContent = 'Scenario time (×30 — fog of war)';
+    else sub.textContent = 'Scenario time (×60 — organized response)';
+  }
+}
+
+function togglePlay() {
+  running = !running;
+  document.getElementById('play-icon').className = running ? 'ti ti-player-pause' : 'ti ti-player-play';
+  document.getElementById('play-label').textContent = running ? '⏸ Pause' : '▶ Start';
+  if (running) { lastTs = null; requestAnimationFrame(tick); }
+}
+
+const fired = new Set();
+
+function restartDemo() {
+  running = false;
+  scenarioTime = T_START;
+  lastTs = null;
+  fired.clear();
+  garCount = 0; hemPending = 0;
+  document.getElementById('sb-gar').textContent = '0';
+  document.getElementById('sb-hem').textContent = 'HEM: 0';
+  document.getElementById('sb-hem-dot').style.background = 'var(--t3)';
+  document.getElementById('sb-agents').textContent = 'Agents: standby';
+  document.getElementById('clock').textContent = fmtClock(T_START);
+  document.getElementById('progress-bar').style.width = '0%';
+  ['s1-ai','s2-ai','s3-ai','s4-ai','s5-ai','s6-ai','s7-ai'].forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = ''; });
+  ['s1-hem','s2-hem','s3-hem','s4-hem','s5-hem','s6-hem','s7-hem'].forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = ''; });
+  const jma = document.getElementById('jma-feed'); if (jma) jma.innerHTML = '';
+  const tl = document.getElementById('s7-timeline'); if (tl) tl.innerHTML = '';
+  const s4news = document.getElementById('s4-news'); if (s4news) s4news.innerHTML = '';
+  ['s2-main','s3-main','s4-main','s6-main'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.innerHTML = '<div style="color:var(--t3);text-align:center;padding:30px;font-size:12px;"><i class="ti ti-clock" style="font-size:24px;display:block;margin-bottom:8px;"></i>Activates during scenario</div>';
+  });
+  document.getElementById('s5-relief-panel').style.display = 'none';
+  ['dc-bldgs','dc-dmgd','dc-fatal','dc-inj'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = '—'; });
+  ['vsc-shelter','vsc-rescue','vsc-med','vsc-disp','vsc-power'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = '—'; });
+  document.getElementById('seismo-status').textContent = '● Monitoring';
+  document.getElementById('seismo-status').style.color = 'var(--green)';
+  document.getElementById('s1-phase').textContent = '';
+  waveData = [];
+  ['seismic','master','sim','local'].forEach(id => setPill(id, 'offline'));
+  setPhase('Phase: Pre-event | Normal', 'var(--t3)');
+  const sb = document.getElementById('shindo-board'); if (sb) sb.style.display = 'none';
+  document.getElementById('play-icon').className = 'ti ti-player-play';
+  document.getElementById('play-label').textContent = '▶ Start';
+  document.getElementById('play-btn').onclick = togglePlay;
+  // reset infra cards
+  resetInfra();
+  updateSpeedBadge(T_START);
+  EVENTS.forEach(ev => { if (ev.t <= T_START) { fired.add(ev.id); try { ev.fn(); } catch(e) {} } });
+  S7_EVENTS.forEach(ev => { if (ev.t <= T_START) { fired.add(ev.id); try { ev.fn(); } catch(e) {} } });
+}
+
+function resetInfra() {
+  // reset infra cards to initial state
+  const updates = {
+    'ic-pioneer-upd': 'T+0:00 — Unreinforced masonry structures in MMI IX zone. No human confirmation yet.',
+    'ic-amazon-upd': 'T+0:00 — Fault trace passes through SLU campus. AWS US-West-2 likely offline. WebEOC status unknown.',
+    'ic-port-upd': 'T+0:00 — Harbor Island liquefaction expected. Elliott Bay tsunami arrival T+0:00. All vessels evacuation alert.',
+    'ic-harborview-upd': 'T+0:00 — BCP auto-activated. Emergency power switching. Patient safety check underway.',
+    'ic-wsb-upd': 'T+0:00 — Seismic sensors triggered closure. ~100,000 West Seattle residents isolated. 4-authority problem.',
+    'ic-i90-upd': 'T+0:00 — Floating bridge seismic sensors triggered. Pontoon integrity unknown.',
+  };
+  Object.entries(updates).forEach(([id, txt]) => { const el = document.getElementById(id); if (el) el.textContent = txt; });
+  const bars = ['ic-pioneer-bar','ic-amazon-bar','ic-port-bar','ic-harborview-bar','ic-wsb-bar','ic-i90-bar'];
+  bars.forEach(id => { const el = document.getElementById(id); if (el) el.style.width = id.includes('harborview') ? '40%' : id.includes('i90') ? '10%' : '0%'; });
+  const wsb = document.getElementById('ic-wsb-ferry'); if (wsb) wsb.textContent = 'Not yet authorized';
+  const sr = document.getElementById('ic-sr520'); if (sr) sr.textContent = 'Also checking';
+}
+
+function tick(ts) {
+  if (!running) return;
+  if (lastTs !== null) {
+    const dt = (ts - lastTs) / 1000;
+    const sp = getSpeed(scenarioTime);
+    scenarioTime = Math.min(T_END, scenarioTime + dt * sp);
+  }
+  lastTs = ts;
+  document.getElementById('clock').textContent = fmtClock(scenarioTime);
+  updateSpeedBadge(scenarioTime);
+  const pct = (scenarioTime - T_START) / (T_END - T_START) * 100;
+  document.getElementById('progress-bar').style.width = pct + '%';
+  checkEvents();
+  updateSeismo();
+  if (scenarioTime < T_END) requestAnimationFrame(tick);
+  else {
+    running = false;
+    document.getElementById('play-icon').className = 'ti ti-reload';
+    document.getElementById('play-label').textContent = '↺ Restart';
+    document.getElementById('play-btn').onclick = restartDemo;
+  }
+}
+
+function checkEvents() {
+  EVENTS.forEach(ev => { if (!fired.has(ev.id) && scenarioTime >= ev.t) { fired.add(ev.id); try { ev.fn(); } catch(e) { console.warn(ev.id, e); } } });
+  S7_EVENTS.forEach(ev => { if (!fired.has(ev.id) && scenarioTime >= ev.t) { fired.add(ev.id); try { ev.fn(); } catch(e) {} } });
+}
+
+// ══ TABS ══════════════════════════════════════════════════════
+const DS = {
+  1: 'ShakeAlert (USGS) ｜ PNSN Strong Motion Network ｜ WebEOC ｜ King County KCEOC EEI',
+  2: 'WebEOC EEI v1.1 ｜ HAZUS (FEMA) ｜ USGS ShakeMaps ｜ LIDAR Building Inventory',
+  3: 'WebEOC EEI v1.1 ｜ Stafford Act ｜ RCW 38.52 ｜ King County CEMP 2020 ｜ KC ESF Annexes 2022',
+  4: 'IPAWS-OPEN ｜ KOMO/KING/KIRO TV ｜ WEA Wireless Emergency Alerts ｜ WA Emergency Management',
+  5: 'HAZUS FEMA Loss Model ｜ Stafford Act §408 ｜ RCW 38.52 ｜ WA CEMP 2024 ｜ King County ESF-6',
+  6: 'HAZUS AI Estimates ｜ FEMA Preliminary Damage Assessment ｜ King County ARC ｜ KCOEOC',
+  7: 'WebEOC EEI v1.1 ｜ Seattle City Light ｜ WSDOT ｜ King County Metro ｜ Port of Seattle ｜ Harborview Medical'
+};
+function switchTab(n) {
+  document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', i === n - 1));
+  document.querySelectorAll('.screen').forEach((s, i) => s.classList.toggle('active', i === n - 1));
+  document.getElementById('ds-txt').textContent = DS[n];
+}
+
+// ══ SEISMOGRAPH ═══════════════════════════════════════════════
+const canvas = document.getElementById('seismo-canvas');
+const ctx2 = canvas.getContext('2d');
+let waveData = [], fc = 0;
+const WP = 600;
+
+function initSeismo() {
+  canvas.width = canvas.offsetWidth || 500; canvas.height = 96;
+  if (!waveData.length) waveData = new Array(WP).fill(48);
+}
+
+function getAmp(st) {
+  const n = () => (Math.random() - .5) * 2;
+  if (st < -1) return n() * 1.5;
+  if (st < 0) return n() * 3 + Math.sin(fc * .8) * 2;
+  if (st < 1.5) return n() * 38 + Math.sin(fc * .6) * 40;
+  if (st < 10) return n() * 22 + Math.sin(fc * .4) * (35 * Math.exp(-.12 * st));
+  if (st < 60) return n() * 8 + Math.sin(fc * .2) * (12 * Math.exp(-.04 * st));
+  return n() * 2.5;
+}
+
+function updateSeismo() {
+  if (!canvas.width) initSeismo();
+  fc++;
+  const amp = getAmp(scenarioTime);
+  waveData.push(48 + amp);
+  if (waveData.length > WP) waveData.shift();
+  const w = canvas.width, h = canvas.height;
+  ctx2.fillStyle = '#060E0B'; ctx2.fillRect(0, 0, w, h);
+  ctx2.strokeStyle = '#1C2B26'; ctx2.lineWidth = .5;
+  [24, 48, 72].forEach(y => { ctx2.beginPath(); ctx2.moveTo(0, y); ctx2.lineTo(w, y); ctx2.stroke(); });
+  ctx2.strokeStyle = '#28403A'; ctx2.lineWidth = .8;
+  ctx2.beginPath(); ctx2.moveTo(0, 48); ctx2.lineTo(w, 48); ctx2.stroke();
+  const quake = scenarioTime > 0 && scenarioTime < 90;
+  ctx2.strokeStyle = quake ? '#F0584F' : '#3FE3AC'; ctx2.lineWidth = quake ? 1.8 : 1.2;
+  ctx2.beginPath();
+  const step = w / WP;
+  waveData.forEach((y, i) => { i === 0 ? ctx2.moveTo(0, y) : ctx2.lineTo(i * step, y); });
+  ctx2.stroke();
+}
+
+// ══ EVENT HELPERS ═════════════════════════════════════════════
+function addAI(scr, agent, text, cls) {
+  const el = document.createElement('div');
+  el.className = `ai-entry ${cls}`;
+  el.innerHTML = `<div class="ai-entry-time">${fmtClock(scenarioTime)}</div>
+    <div class="ai-entry-agent">${agent}</div>
+    <div class="ai-entry-text">${text}</div>`;
+  const log = document.getElementById(`s${scr}-ai`);
+  if (log) { log.insertBefore(el, log.firstChild); }
+  garCount++; document.getElementById('sb-gar').textContent = garCount;
+}
+
+function addJMA(title, mag, body, sev) {
+  const el = document.createElement('div');
+  el.className = `jma-card sev-${sev}`;
+  el.innerHTML = `<div class="jma-time">${fmtClock(scenarioTime)} ｜ ShakeAlert — USGS / PNSN</div>
+    <div class="jma-title">${title}</div>
+    <div class="jma-body"><span class="jma-mag">M${mag}</span>${body}</div>`;
+  const feed = document.getElementById('jma-feed');
+  if (feed) feed.insertBefore(el, feed.firstChild);
+}
+
+function addHEM(scr, id, question, recipient, sev) {
+  hemPending++;
+  document.getElementById('sb-hem').textContent = `HEM: ${hemPending} open`;
+  document.getElementById('sb-hem-dot').style.background = hemPending > 0 ? 'var(--amber)' : 'var(--t3)';
+  const el = document.createElement('div');
+  el.className = `hem-card ${sev}`; el.id = `hem-${id}`;
+  el.innerHTML = `<div class="hem-hdr">
+    <span class="hem-id">HEM-${String(id).padStart(3,'0')}</span>
+    <span class="hem-badge ${sev}">${sev === 'escalated' ? 'URGENT' : 'PENDING'}</span>
+  </div>
+  <div class="hem-q"><span class="hem-pulse"></span>${question}</div>
+  <div class="hem-to">→ ${recipient}</div>`;
+  const log = document.getElementById(`s${scr}-hem`);
+  if (log) { log.insertBefore(el, log.firstChild); }
+}
+
+function resolveHEM(id, responder, decision) {
+  const el = document.getElementById(`hem-${id}`);
+  if (!el) return;
+  el.className = 'hem-card resolved';
+  el.querySelector('.hem-badge').className = 'hem-badge resolved';
+  el.querySelector('.hem-badge').textContent = 'RESOLVED';
+  const pulse = el.querySelector('.hem-pulse'); if (pulse) pulse.remove();
+  const resp = document.createElement('div');
+  resp.className = 'hem-resp';
+  resp.innerHTML = `<strong>${responder}</strong> ｜ ${fmtClock(scenarioTime)}<br>${decision}`;
+  el.appendChild(resp);
+  hemPending = Math.max(0, hemPending - 1);
+  document.getElementById('sb-hem').textContent = `HEM: ${hemPending}${hemPending > 0 ? ' open' : ''}`;
+  garCount++; document.getElementById('sb-gar').textContent = garCount;
+}
+
+function setPill(id, state) {
+  const el = document.getElementById(`pill-${id}`); if (el) el.className = `agent-pill ${state}`;
+}
+function setPhase(txt, col) {
+  document.getElementById('sb-phase').textContent = txt;
+  document.getElementById('sb-phase-dot').style.background = col || 'var(--t3)';
+}
+function addNews(text, col) {
+  const feed = document.getElementById('s4-news'); if (!feed) return;
+  const el = document.createElement('div');
+  el.className = 'news-item';
+  el.style.borderColor = col === 'red' ? 'var(--red)' : col === 'green' ? 'var(--green)' : 'var(--amber)';
+  el.innerHTML = `<span style="color:var(--t3);font-size:9.5px;">${fmtClock(scenarioTime)}</span>
+    <span style="color:${col === 'red' ? 'var(--red)' : col === 'green' ? 'var(--green)' : 'var(--amber)'};margin-left:8px;">${text}</span>`;
+  feed.insertBefore(el, feed.firstChild);
+}
+function icUpd(id, badge, badgeCls, statusCls, text, pct, barCol, recTxt) {
+  const badgeEl = document.getElementById(`ic-${id}-badge`);
+  const updEl = document.getElementById(`ic-${id}-upd`);
+  const barEl = document.getElementById(`ic-${id}-bar`);
+  const recEl = document.getElementById(`ic-${id}-rec`);
+  const cardEl = document.getElementById(`ic-${id}`);
+  if (badgeEl) { badgeEl.textContent = badge; badgeEl.className = `ic-badge ${badgeCls}`; }
+  if (updEl) updEl.textContent = `${fmtClock(scenarioTime)} — ${text}`;
+  if (barEl) { barEl.style.width = pct + '%'; barEl.style.background = `var(--${barCol})`; }
+  if (recEl) recEl.textContent = recTxt;
+  if (cardEl) cardEl.className = `infra-card status-${statusCls}`;
+}
+function addIT(infra, text, col) {
+  const tl = document.getElementById('s7-timeline'); if (!tl) return;
+  const el = document.createElement('div'); el.className = 'it-entry';
+  el.innerHTML = `<div class="it-dot" style="background:var(--${col === 'red' ? 'red' : col === 'green' ? 'green' : 'amber'});"></div>
+    <div class="it-time">${fmtClock(scenarioTime)}</div>
+    <div class="it-infra" style="color:var(--${col === 'red' ? 'red' : col === 'green' ? 'green' : 'amber'})">${infra}</div>
+    <div class="it-text">${text}</div>`;
+  tl.insertBefore(el, tl.firstChild);
+}
+function vs7(key, txt, col) {
+  const el = document.getElementById(`vs7-${key}`);
+  if (el) { el.textContent = txt; el.style.color = `var(--${col === 'red' ? 'red' : col === 'green' ? 'green' : 'amber'})`; }
+}
+
+// ══ EVENTS ════════════════════════════════════════════════════
+const EVENTS = [
+
+// ─ Pre-event ─────────────────────────────────────────────────
+{t:-60,id:'boot',fn:()=>{
+  setPhase('Phase: Pre-event | All systems normal','var(--t3)');
+  setPill('seismic','online');
+  document.getElementById('sb-agents').textContent='Agents: Seismic Monitor AI active';
+}},
+{t:-20,id:'pre1',fn:()=>{
+  addAI(1,'Seismic Monitor AI','PNSN strong motion network: all 47 stations nominal. No anomalies. Continuous monitoring active.','ag-seismic');
+}},
+
+// T+0: EARTHQUAKE — M7.2 Seattle Fault, 2:47 AM
+{t:0,id:'quake',fn:()=>{
+  document.getElementById('seismo-status').textContent='⚠ STRONG MOTION DETECTED!';
+  document.getElementById('seismo-status').style.color='var(--red)';
+  document.getElementById('s1-phase').textContent='▲ EARTHQUAKE';
+  setPhase('Phase: EARTHQUAKE | Seattle Fault Zone | 2:47 AM','var(--red)');
+}},
+{t:2,id:'detect',fn:()=>{
+  addAI(1,'Seismic Monitor AI','M7-class event detected. PNSN station SEA-01: 650+ gal. Seattle Fault Zone rupture signature confirmed. Emergency protocol initiated. Calling Master AI.','ag-seismic');
+}},
+{t:4,id:'shakealert',fn:()=>{
+  addJMA('ShakeAlert Warning — Seattle Fault Zone (USGS/PNSN)','6.8 (initial)','Epicenter: South Lake Union / Downtown Seattle ｜ Depth: 12km ｜ Warning time: 8–12 seconds before P-wave (insufficient for evacuation — Drop/Cover/Hold only)','high');
+  addAI(1,'Seismic Monitor AI','ShakeAlert issued 8-second warning before P-wave arrival at downtown. Automated systems triggered: elevator stops, surgical equipment halt, train emergency brakes. No evacuation possible at this range.','ag-seismic');
+}},
+{t:6,id:'master-on',fn:()=>{
+  addAI(1,'Master AI','Instance spawned. SACR issued (soos:sacr:disaster-ax:seattle-20261019-001). CAP Profile SOOS v3.0 loaded. IDP verified. Connecting to WebEOC…','ag-master');
+  setPill('master','online');
+  document.getElementById('sb-agents').textContent='Agents: 2 active';
+}},
+{t:8,id:'sim-on',fn:()=>{
+  addAI(1,'Simulation AI','Spawned (DR-SPAWN-01 Mechanism B). Non-execution mode. SACR: soos:sacr:sim:seattle-001. HAZUS model loading. ShakeMap integration starting.','ag-sim');
+  setPill('sim','active');
+  setTimeout(()=>setPill('sim','online'),1200);
+  document.getElementById('sb-agents').textContent='Agents: 3 active';
+}},
+{t:12,id:'hem1',fn:()=>{
+  addHEM(1,1,'Initial assessment: ShakeAlert M6.8 (likely M7+). Seattle Fault Zone confirmed. Maximum Crisis (GOLD) auto-classification is prohibited — human confirmation required. Duty officer emergency contact.','Duty Officer — King County KCEOC (Renton) ｜ Emergency Call','escalated');
+  addAI(1,'Master AI','ShakeAlert M6.8 initial report. Actual magnitude likely higher — Seattle Fault shallow crustal characteristics. CAP prohibition: AI cannot self-classify as GOLD. HEM-001 issued for duty officer confirmation.','ag-master');
+}},
+{t:30,id:'eew2',fn:()=>{
+  addJMA('ShakeAlert — REVISED: M7.2 Confirmed (USGS)','7.2','Fault: Seattle Fault Zone | 63km rupture | Epicenter: 47.57°N 122.35°W (South Lake Union) ｜ Depth: 12km ｜ MMI IX downtown — most damaging scenario for Seattle','high');
+  addAI(1,'Seismic Monitor AI','M7.2 confirmed. Seattle Fault Zone 63km rupture. Shallow crustal — significantly more damaging per magnitude than 2001 Nisqually M6.8 (deep). MMI IX downtown Seattle. HAZUS trigger conditions met.','ag-seismic');
+  addAI(1,'Master AI','M7.2 Seattle Fault confirmed. Maximum Crisis (GOLD) probability extremely high. WebEOC connection… AWS US-West-2 not responding. Attempting failover. Duty officer response pending.','ag-master');
+}},
+{t:90,id:'duty-ok',fn:()=>{
+  resolveHEM(1,'King County KCEOC Duty Officer','M7.2 Seattle Fault confirmed — witnessed shaking at Renton facility. Maximum Crisis (GOLD) classification approved. Full activation initiated. Calling KCEOC Director.');
+  addAI(1,'Master AI','GOLD confirmed. GAR recorded: soos:gar:evt:hem001-resolved. All agents notified. KCEOC activation sequence underway. AWS failover to Oregon confirmed — WebEOC operational on backup.','ag-master');
+  setPhase('Phase: MAXIMUM CRISIS (GOLD) | All agents active','var(--red)');
+  document.getElementById('s1-phase').textContent='🔴 MAXIMUM CRISIS GOLD';
+  document.getElementById('s1-phase').style.color='var(--red)';
+  document.getElementById('sb-agents').textContent='Agents: 4+ active ｜ GOLD';
+  setPill('local','active');
+  setTimeout(()=>setPill('local','online'),800);
+}},
+{t:120,id:'hem2',fn:()=>{
+  addHEM(1,2,'Governor notification: M7.2 Maximum Crisis GOLD confirmed. Governor activation required for National Guard and state emergency declaration. Contact Governor\'s emergency duty officer.','WA Governor\'s Duty Officer ｜ Emergency Hotline','escalated');
+  addAI(1,'Master AI','HEM-002: AI cannot contact Governor directly (CAP_NO_DIRECT_EXEC). Governor activation is sole authority for WA National Guard. Routing through emergency protocol.','ag-master');
+}},
+{t:200,id:'shindo',fn:()=>{
+  document.getElementById('shindo-board').style.display='block';
+  const g=document.getElementById('shindo-grid');
+  if(g)g.innerHTML=[
+    {l:'Downtown Seattle',v:'IX',c:'s7'},{l:'Pioneer Square',v:'IX',c:'s7'},{l:'South Lake Union',v:'IX',c:'s7'},
+    {l:'Capitol Hill',v:'VIII',c:'s6s'},{l:'West Seattle',v:'VIII',c:'s6s'},{l:'Bellevue (N.)',v:'VIII',c:'s6s'},
+    {l:'Redmond/Microsoft',v:'VII',c:'s6w'},{l:'Sea-Tac Airport',v:'VII',c:'s5s'},{l:'JBLM/Olympia',v:'VI',c:'s4'}
+  ].map(d=>`<div class="shindo-cell"><div class="shindo-val ${d.c}">${d.v}</div><div class="shindo-loc">${d.l}</div></div>`).join('');
+  addAI(1,'Seismic Monitor AI','MMI by district (ShakeAlert estimated): Downtown/Pioneer Square/SLU: MMI IX. Capitol Hill/First Hill/West Seattle: MMI VIII. Redmond/Sea-Tac: MMI VII. JBLM area: MMI VI. Everett/Boeing: MMI V.','ag-seismic');
+}},
+{t:300,id:'local1',fn:()=>{
+  addAI(1,'Local AI (King County KCEOC)','Connection established from Renton facility. Shaking experienced directly. KCEOC backup power activated. WebEOC on AWS Oregon failover — operational. EEI data collection starting. Director notification in progress.','ag-local');
+}},
+{t:420,id:'local2',fn:()=>{
+  addAI(1,'Local AI (City of Seattle OEM)','Connection established. SOC shaking confirmed. 911 call volume: 847 calls in first 2 minutes (system capacity: 400). Call routing overflow activated. Shelter-in-place messaging via IPAWS being prepared.','ag-local');
+  addAI(1,'Local AI (Seattle City Light)','Connection established. 218,464 customers without power (King County). Automatic fault isolation complete. Priority restoration sequencing: hospitals, EOCs, water treatment.','ag-local');
+}},
+{t:540,id:'gov-ok',fn:()=>{
+  resolveHEM(2,'WA Governor\'s Duty Officer','Governor reached — 2:54 AM. State of Emergency declared under RCW 38.52. Governor activating WA National Guard. SEOC at Camp Murray on full activation. FEMA Region X notification started.');
+  addAI(1,'Master AI','HEM-002 resolved. GAR recorded. Governor declaration received. WA National Guard activation authorized. SEOC Camp Murray full activation underway. FEMA Region X contact initiated.','ag-master');
+}},
+
+// ─ Screen 2 — Damage Simulation ─────────────────────────────
+{t:130,id:'s2-start',fn:()=>{
+  document.getElementById('s2-main').innerHTML=`
+    <div class="map-panel">
+      <div class="panel-h"><i class="ti ti-map-2"></i> Damage Estimate Map ｜ HAZUS AI — Seattle Fault Zone M7.2
+        <span style="margin-left:auto;font-size:9px;color:var(--purple);background:#1A1030;padding:2px 6px;border-radius:4px;border:1px solid var(--purple);">🤖 AI ESTIMATE</span>
+      </div>
+      <svg id="s2-map-svg" width="100%" viewBox="0 0 560 320" style="display:block;border-radius:8px;background:#07100D;">
+        <defs>
+          <!-- MMI IX — deep red -->
+          <radialGradient id="dmgIX" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#8B0000" stop-opacity=".45"/>
+            <stop offset="60%" stop-color="#8B0000" stop-opacity=".18"/>
+            <stop offset="100%" stop-color="#8B0000" stop-opacity="0"/>
+          </radialGradient>
+          <!-- MMI VIII — orange -->
+          <radialGradient id="dmgVIII" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#CC4400" stop-opacity=".30"/>
+            <stop offset="100%" stop-color="#CC4400" stop-opacity="0"/>
+          </radialGradient>
+          <!-- MMI VII — amber -->
+          <radialGradient id="dmgVII" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#CCAA00" stop-opacity=".20"/>
+            <stop offset="100%" stop-color="#CCAA00" stop-opacity="0"/>
+          </radialGradient>
+          <!-- MMI VI — light -->
+          <radialGradient id="dmgVI" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#88AA44" stop-opacity=".12"/>
+            <stop offset="100%" stop-color="#88AA44" stop-opacity="0"/>
+          </radialGradient>
+          <filter id="glow"><feGaussianBlur stdDeviation="2.5" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          <clipPath id="mapClip"><rect width="560" height="320" rx="8"/></clipPath>
+        </defs>
+
+        <g clip-path="url(#mapClip)">
+        <!-- Ocean background -->
+        <rect width="560" height="320" fill="#07110E"/>
+
+        <!-- ── PUGET SOUND (left/west) ── -->
+        <path d="M0,0 L120,0 L125,20 L118,45 L115,70 L120,95 L125,120 L122,145 L118,170 L115,200 L118,230 L115,260 L112,290 L108,320 L0,320 Z" fill="#091C18" opacity=".9"/>
+        <!-- Puget Sound water color -->
+        <path d="M0,0 L118,0 L124,25 L117,55 L114,85 L119,115 L124,145 L120,175 L116,205 L119,235 L114,265 L110,295 L106,320 L0,320 Z" fill="#0A1E1A"/>
+        <text x="48" y="160" fill="#112A22" font-size="10" font-style="italic" transform="rotate(-90,48,160)">PUGET SOUND</text>
+
+        <!-- Elliott Bay (indent into Puget Sound) -->
+        <path d="M118,130 L148,128 L162,140 L168,155 L162,168 L148,172 L118,170 Z" fill="#0B1E1A"/>
+        <text x="130" y="152" fill="#1A3A30" font-size="7.5" font-style="italic" text-anchor="middle">Elliott Bay</text>
+
+        <!-- ── KITSAP PENINSULA (across Puget Sound) ── -->
+        <path d="M0,60 L52,55 L62,72 L60,95 L55,115 L58,135 L55,158 L50,175 L48,200 L50,225 L45,255 L40,280 L0,280 Z" fill="#0F1E18"/>
+        <text x="28" y="170" fill="#1A3028" font-size="8" transform="rotate(-90,28,170)">Kitsap Peninsula</text>
+
+        <!-- Naval Base Kitsap marker -->
+        <rect x="18" y="195" width="16" height="10" rx="2" fill="#0A1818" stroke="#5BA3E0" stroke-width="1" opacity=".7"/>
+        <text x="26" y="203" text-anchor="middle" fill="#5BA3E0" font-size="7">⚓🔒</text>
+        <text x="38" y="200" fill="#5BA3E0" font-size="6.5">Naval Base Kitsap</text>
+        <text x="38" y="207" fill="#5BA3E0" font-size="6">Federal authority</text>
+
+        <!-- ── LAKE WASHINGTON (right/east) ── -->
+        <path d="M410,20 L432,22 L442,40 L445,65 L448,90 L450,115 L452,140 L450,165 L448,190 L445,215 L440,240 L432,255 L420,260 L410,255 L405,230 L402,205 L400,180 L400,155 L402,130 L405,105 L407,80 L408,55 L409,30 Z" fill="#0B1E1A"/>
+        <text x="425" y="145" fill="#112A22" font-size="8" font-style="italic" text-anchor="middle">Lake Washington</text>
+
+        <!-- ── LAND MASS — Greater Seattle area ── -->
+        <path d="M118,0 L410,0 L409,30 L408,55 L407,80 L405,105 L402,130 L400,155 L400,180 L402,205 L405,230 L410,255 L420,260 L432,255 L440,240 L445,215 L448,190 L450,165 L452,140 L450,115 L448,90 L445,65 L442,40 L432,22 L410,20 L410,0 L560,0 L560,320 L106,320 L110,295 L114,265 L119,235 L116,205 L120,175 L124,145 L119,115 L114,85 L117,55 L118,30 Z" fill="#0E1E17"/>
+
+        <!-- ── FAULT LINE — E-W, Seattle Fault Zone ── -->
+        <!-- Surface trace: Alki Point → Downtown → Bellevue → Lake Sammamish -->
+        <path d="M118,162 L145,160 L175,158 L210,156 L240,155 L270,155 L300,154 L330,154 L365,154 L395,153 L410,153 L445,152"
+          stroke="#F0584F" stroke-width="1.5" stroke-dasharray="6,4" opacity=".65" fill="none"/>
+        <text x="145" y="149" fill="#F0584F" font-size="8" font-weight="600" opacity=".85">Seattle Fault Zone — 63 km rupture</text>
+
+        <!-- ── DAMAGE ZONES centred on epicentre (Downtown/SLU: x≈240, y≈150) ── -->
+        <!-- MMI IX — tight zone -->
+        <ellipse cx="240" cy="152" rx="55" ry="35" fill="url(#dmgIX)"/>
+        <!-- MMI VIII -->
+        <ellipse cx="240" cy="152" rx="120" ry="85" fill="url(#dmgVIII)"/>
+        <!-- MMI VII -->
+        <ellipse cx="240" cy="152" rx="200" ry="140" fill="url(#dmgVII)"/>
+        <!-- MMI VI -->
+        <ellipse cx="240" cy="152" rx="310" ry="200" fill="url(#dmgVI)"/>
+
+        <!-- ── SEISMIC WAVE RINGS ── -->
+        <circle class="ring-anim" cx="240" cy="152" r="0" fill="none" stroke="#F0584F" stroke-width="1.5" opacity=".7"/>
+        <circle class="ring-anim2" cx="240" cy="152" r="0" fill="none" stroke="#CC4400" stroke-width="1" opacity=".5"/>
+        <circle class="ring-anim3" cx="240" cy="152" r="0" fill="none" stroke="#F0584F" stroke-width="1" opacity=".3"/>
+
+        <!-- ── EPICENTRE ── -->
+        <g class="epi-pulse" filter="url(#glow)">
+          <circle cx="240" cy="152" r="10" fill="#F0584F" opacity=".2"/>
+          <circle cx="240" cy="152" r="5.5" fill="#8B0000"/>
+          <path d="M236,148 L240,139 L244,148 L240,157 Z" fill="#FF2020" opacity=".9"/>
+        </g>
+        <text x="240" y="133" text-anchor="middle" fill="#FF5050" font-size="8.5" font-weight="700">Epicentre</text>
+        <text x="240" y="124" text-anchor="middle" fill="#FF3030" font-size="7.5">M7.2 | 12km depth</text>
+
+        <!-- ── ROADS ── -->
+        <!-- I-5 N-S spine -->
+        <path d="M215,0 L218,30 L220,60 L222,90 L224,120 L226,150 L228,180 L230,210 L232,240 L234,270 L236,300 L237,320"
+          stroke="#2A4030" stroke-width="2.5" fill="none"/>
+        <path d="M215,0 L218,30 L220,60 L222,90 L224,120 L226,150 L228,180 L230,210 L232,240 L234,270 L236,300 L237,320"
+          stroke="#F0A93C" stroke-width="1" fill="none" stroke-dasharray="8,4" opacity=".4"/>
+        <text x="208" y="80" fill="#F0A93C" font-size="7.5" opacity=".7">I-5</text>
+        <!-- I-5 break marker at Duwamish crossing -->
+        <circle cx="229" cy="208" r="5" fill="none" stroke="#F0584F" stroke-width="1.5"/>
+        <text x="234" y="210" fill="#F0584F" font-size="7">⚠ I-5 closure</text>
+
+        <!-- I-90 E-W, crossing Lake Washington -->
+        <path d="M190,200 L220,198 L250,197 L280,197 L310,196 L340,196 L370,196 L395,196 L410,196 L445,195"
+          stroke="#5BA3E0" stroke-width="1.5" fill="none" stroke-dasharray="5,3" opacity=".5"/>
+        <text x="310" y="191" fill="#5BA3E0" font-size="7.5" opacity=".7">I-90</text>
+        <!-- I-90 bridge marker on Lake Washington -->
+        <circle cx="425" cy="196" r="5" fill="none" stroke="#F0A93C" stroke-width="1.5"/>
+        <text x="433" y="198" fill="#F0A93C" font-size="7">⚠ pontoon check</text>
+
+        <!-- SR-520 floating bridge (north of I-90) -->
+        <path d="M260,120 L280,120 L310,120 L340,119 L370,119 L400,118 L410,118 L445,117"
+          stroke="#5BA3E0" stroke-width="1.5" fill="none" stroke-dasharray="5,3" opacity=".4"/>
+        <text x="310" y="114" fill="#5BA3E0" font-size="7" opacity=".6">SR-520</text>
+        <circle cx="428" cy="118" r="4" fill="none" stroke="#F0A93C" stroke-width="1.2"/>
+
+        <!-- West Seattle Bridge diagonal SW -->
+        <path d="M175,210 L158,230 L145,248 L130,260"
+          stroke="#5BA3E0" stroke-width="1.5" fill="none" stroke-dasharray="4,3" opacity=".5"/>
+        <text x="133" y="257" fill="#F0584F" font-size="7.5" font-weight="600">⚠ W Seattle Brdg CLOSED</text>
+
+        <!-- SR-99/I-405 bypass — Seismic Lifeline Corridor (green) -->
+        <path d="M237,320 L240,290 L242,260 L244,230 L246,200 L248,170 L250,140 L252,110 L254,80 L255,50 L256,20 L257,0"
+          stroke="#1F5C49" stroke-width="2" fill="none" opacity=".5"/>
+        <text x="260" y="60" fill="#3FE3AC" font-size="7" opacity=".7">SR-99 Lifeline Route</text>
+
+        <!-- ── NODE 1: Pioneer Square ── -->
+        <circle cx="228" cy="168" r="6" fill="#8B0000" opacity=".8" stroke="#FF2020" stroke-width="1"/>
+        <text x="198" y="164" fill="#FF5050" font-size="8" font-weight="700">⚠ Pioneer Sq</text>
+        <text x="198" y="173" fill="#FF5050" font-size="7">URM collapse zone</text>
+
+        <!-- ── NODE 2: Amazon HQ / SLU ── -->
+        <rect x="234" y="135" width="14" height="12" rx="2" fill="#1A0E10" stroke="#F0584F" stroke-width="1" opacity=".9"/>
+        <text x="241" y="144" text-anchor="middle" fill="#EAF4F0" font-size="8">🏢</text>
+        <text x="250" y="139" fill="#EAF4F0" font-size="8" font-weight="600">Amazon HQ</text>
+        <text x="250" y="148" fill="#F0584F" font-size="7">MMI IX | On fault</text>
+
+        <!-- ── NODE 3: Harbor Island / Port ── -->
+        <path d="M145,188 L168,185 L170,200 L148,203 Z" fill="#0A1818" stroke="#F0584F" stroke-width="1" opacity=".8"/>
+        <text x="138" y="185" fill="#F0A93C" font-size="8" font-weight="600">⚓ Port of Seattle</text>
+        <text x="138" y="193" fill="#F0584F" font-size="7">Tsunami + Liquefaction</text>
+
+        <!-- ── NODE 4: Elliott Bay tsunami ── -->
+        <path d="M127,150 Q134,145 141,150 Q148,155 155,150" stroke="#5BA3E0" stroke-width="1.2" fill="none" opacity=".5"/>
+        <path d="M127,157 Q134,152 141,157 Q148,162 155,157" stroke="#5BA3E0" stroke-width="1" fill="none" opacity=".3"/>
+        <text x="125" y="143" fill="#5BA3E0" font-size="7">🌊 Elliott Bay T+0</text>
+
+        <!-- ── NODE 7: Harborview Medical ── -->
+        <rect x="258" y="148" width="12" height="12" rx="1" fill="#1A0E28" stroke="#A78BFA" stroke-width="1"/>
+        <text x="264" y="157" text-anchor="middle" fill="#A78BFA" font-size="7" font-weight="700">H</text>
+        <text x="272" y="152" fill="#A78BFA" font-size="7.5">Harborview</text>
+        <text x="272" y="160" fill="#A78BFA" font-size="6.5">DMCC | MMI VIII</text>
+
+        <!-- ── NODE 10: Microsoft Redmond ── -->
+        <rect x="460" y="95" width="14" height="12" rx="2" fill="#0A1A28" stroke="#5BA3E0" stroke-width="1" opacity=".8"/>
+        <text x="467" y="104" text-anchor="middle" fill="#5BA3E0" font-size="8">💻</text>
+        <text x="478" y="99" fill="#8AA39B" font-size="7.5">Microsoft / Azure</text>
+        <text x="478" y="107" fill="#D4C020" font-size="7">MMI VII</text>
+
+        <!-- ── NODE 11: Naval Base Kitsap (already shown above) ── -->
+
+        <!-- ── NODE 12: JBLM ── -->
+        <rect x="148" y="285" width="14" height="12" rx="2" fill="#1A2810" stroke="#F0A93C" stroke-width="1" opacity=".8"/>
+        <text x="155" y="294" text-anchor="middle" fill="#F0A93C" font-size="8">🪖</text>
+        <text x="165" y="289" fill="#8AA39B" font-size="7.5">JBLM I Corps</text>
+        <text x="165" y="297" fill="#5BA3E0" font-size="6.5">Presidential auth req'd</text>
+
+        <!-- ── NODE 13: Camp Murray / SEOC ── -->
+        <rect x="168" y="285" width="10" height="10" rx="2" fill="#1A2020" stroke="#3FE3AC" stroke-width="1" opacity=".7"/>
+        <text x="173" y="293" text-anchor="middle" fill="#3FE3AC" font-size="7">🏛</text>
+        <text x="182" y="289" fill="#3FE3AC" font-size="7">Camp Murray SEOC</text>
+
+        <!-- ── NODE 9: Sea-Tac Airport ── -->
+        <rect x="218" y="255" width="16" height="14" rx="2" fill="#1A2018" stroke="#F0A93C" stroke-width="1" opacity=".8"/>
+        <text x="225" y="265" text-anchor="middle" fill="#EAF4F0" font-size="8">✈</text>
+        <text x="238" y="259" fill="#EAF4F0" font-size="8.5" font-weight="600">Sea-Tac</text>
+        <text x="238" y="268" fill="#F0A93C" font-size="7">Runway inspection</text>
+
+        <!-- ── NODE 14: Boeing Everett ── -->
+        <rect x="288" y="18" width="16" height="14" rx="2" fill="#1A2018" stroke="#3FE3AC" stroke-width="1" opacity=".7"/>
+        <text x="296" y="28" text-anchor="middle" fill="#3FE3AC" font-size="8">✈</text>
+        <text x="308" y="22" fill="#8AA39B" font-size="7.5">Boeing Everett</text>
+        <text x="308" y="30" fill="#3FE3AC" font-size="7">Alt. staging hub MMI V</text>
+
+        <!-- ── COMPASS ROSE ── -->
+        <g transform="translate(530,28)">
+          <circle r="13" fill="#0E1E17" stroke="#1C2B26" stroke-width="1"/>
+          <text y="-5" text-anchor="middle" fill="#C8D6D0" font-size="8" font-weight="700">N</text>
+          <path d="M0,-10 L2.5,0 L0,10 L-2.5,0 Z" fill="#3FE3AC" opacity=".6"/>
+        </g>
+
+        <!-- ── SCALE BAR ── -->
+        <g transform="translate(18,300)">
+          <line x1="0" y1="0" x2="45" y2="0" stroke="#3D544D" stroke-width="1.5"/>
+          <line x1="0" y1="-3" x2="0" y2="3" stroke="#3D544D" stroke-width="1"/>
+          <line x1="45" y1="-3" x2="45" y2="3" stroke="#3D544D" stroke-width="1"/>
+          <text x="22" y="-5" text-anchor="middle" fill="#3D544D" font-size="7.5">10 km</text>
+        </g>
+
+        </g><!-- clip -->
+      </svg>
+
+      <div style="display:flex;gap:12px;margin-top:7px;font-size:9.5px;color:var(--t3);flex-wrap:wrap;align-items:center;">
+        <span style="font-weight:600;color:var(--t2);">MMI Zone:</span>
+        <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#8B0000;margin-right:3px;opacity:.9"></span>IX Violent</span>
+        <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#CC4400;margin-right:3px;opacity:.8"></span>VIII Destructive</span>
+        <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#CCAA00;margin-right:3px;opacity:.7"></span>VII Very Strong</span>
+        <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#88AA44;margin-right:3px;opacity:.6"></span>VI Strong</span>
+        <span style="margin-left:8px;font-weight:600;color:var(--t2);">Facilities:</span>
+        <span style="color:#F0584F;">★ Epicentre</span>
+        <span style="color:#EAF4F0;">✈ Airport</span>
+        <span style="color:#A78BFA;">H Hospital</span>
+        <span style="color:#F0A93C;">⚓ Port</span>
+        <span style="color:var(--t3);">--- Fault trace (E-W)</span>
+      </div>
+    </div>
+    <div id="s2-triage"></div>`;
+  addAI(2,'Simulation AI','GOLD approval received. Full HAZUS model running. USGS ShakeMap + LIDAR building inventory integration active. Damage estimate map generated.','ag-sim');
+}},
+{t:700,id:'s2-triage',fn:()=>{
+  const t=document.getElementById('s2-triage');
+  if(!t)return;
+  const items=[
+    {n:'Pioneer Square (URM)',d:'Epicentre −1.5km',s:'MMI IX',st:'#8B0000',lbl:'CATASTROPHIC',note:'200+ URM buildings, 50-80% complete damage predicted'},
+    {n:'Port of Seattle / Harbor Island',d:'Epicentre −3km',s:'MMI IX',st:'#F0584F',lbl:'CRITICAL',note:'Liquefaction on engineered fill, tsunami arrival T+0'},
+    {n:'Harborview Medical Center',d:'Epicentre −1km',s:'MMI VIII',st:'#F0584F',lbl:'CRITICAL',note:'Designated DMCC, Level I Trauma — BCP activated'},
+    {n:'West Seattle Bridge',d:'Epicentre −4km',s:'MMI VIII',st:'#F0A93C',lbl:'VERIFY',note:'~100,000 residents isolated — 4-authority coordination required'},
+    {n:'I-90/SR-520 Floating Bridges',d:'Epicentre −7km',s:'MMI VII',st:'#F0A93C',lbl:'VERIFY',note:'Pontoon integrity unknown, Eastside access suspended'},
+  ];
+  t.innerHTML='<div style="font-size:10px;color:var(--t2);margin-bottom:6px;"><i class="ti ti-list-details"></i> Critical Infrastructure Triage ｜ Distance from Epicentre ｜ AI Generated</div>';
+  items.forEach(it=>{
+    t.innerHTML+=`<div class="inf-row" style="border-left-color:${it.st};">
+      <div style="flex:1;">
+        <div style="font-size:13px;font-weight:500;color:var(--t0);">${it.n}</div>
+        <div style="font-size:10px;color:var(--t3);margin-top:2px;">${it.d} ｜ ${it.s} ｜ ${it.note}</div>
+      </div>
+      <span style="font-size:10px;padding:2px 8px;border-radius:5px;background:${it.st}22;color:${it.st};font-weight:600;white-space:nowrap;">${it.lbl}</span>
+    </div>`;
+  });
+  addAI(2,'Simulation AI','Infrastructure triage complete (5 facilities). Pioneer Square URM and Port of Seattle flagged CATASTROPHIC/CRITICAL. HAZUS: $19.8B capital stock loss estimate (15-county region). WebEOC EEI updated.','ag-sim');
+}},
+{t:480,id:'s2-aws-moment',fn:()=>{
+  addAI(2,'Master AI','⚠ GOVERNANCE ALERT: King County KCEOC confirms WebEOC operational — but running on AWS US-West-2 Oregon failover. AWS Seattle region failed at T+4s. Situational awareness tools for this disaster are running on infrastructure owned by one of the primary disaster victims (Amazon HQ, MMI IX zone). SOOS Event Log (WAL pattern) is locally held and append-only — does not depend on AWS. This is the SOOS design philosophy.','ag-master');
+}},
+
+// ─ Screen 3 — Command Structure ──────────────────────────────
+{t:480,id:'s3-init',fn:()=>{
+  document.getElementById('s3-main').innerHTML=`
+    <!-- SEOC / State level -->
+    <div class="panel" style="margin-bottom:8px;">
+      <div class="panel-h" style="margin-bottom:10px;">
+        <i class="ti ti-building-bank"></i> WA State ｜ State Emergency Operations Center (SEOC) — Camp Murray
+        <span id="s3-seoc-status" style="margin-left:auto;font-size:9px;padding:2px 7px;border-radius:4px;background:#1A0E00;color:var(--amber);border:1px solid #3A2A00;">Activating</span>
+      </div>
+      <div id="s3-seoc" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:5px;"></div>
+      <div style="font-size:9.5px;color:var(--t3);margin-top:8px;padding-top:8px;border-top:1px solid var(--bd);">
+        Authority: RCW 38.52 ｜ Governor's Declaration of Emergency ｜ Stafford Act request pending
+      </div>
+    </div>
+
+    <!-- King County EOC -->
+    <div class="panel" style="margin-bottom:8px;">
+      <div class="panel-h" style="margin-bottom:10px;">
+        <i class="ti ti-map-pin"></i> King County ｜ KCEOC — 3511 NE 2nd St, Renton (Operational)
+        <span id="s3-kceoc-status" style="margin-left:auto;font-size:9px;padding:2px 7px;border-radius:4px;background:#0A1A10;color:var(--green);border:1px solid #1F5C49;">ACTIVE</span>
+      </div>
+      <div id="s3-kceoc" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:5px;"></div>
+      <div style="font-size:9.5px;color:var(--t3);margin-top:8px;padding-top:8px;border-top:1px solid var(--bd);">
+        Authority: King County Code 12.52 ｜ ESF Annexes 2022 ｜ WebEOC operational (AWS Oregon failover)
+      </div>
+    </div>
+
+    <!-- 3 independent tracks -->
+    <div style="font-size:10px;color:var(--t3);margin:8px 0 5px;padding-top:6px;border-top:1px solid var(--bd);">
+      These 3 tracks operate on independent legal authority — outside county/state command
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px;">
+      <div class="panel" id="t-guard" style="opacity:.4;">
+        <div style="font-size:11px;font-weight:500;color:var(--t1);"><i class="ti ti-shield-star"></i> WA National Guard</div>
+        <div style="font-size:9.5px;color:var(--t3);margin-top:3px;">Governor sole authority ｜ RCW 38.08</div>
+      </div>
+      <div class="panel" id="t-fema" style="opacity:.4;">
+        <div style="font-size:11px;font-weight:500;color:var(--t1);"><i class="ti ti-home-heart"></i> FEMA / JFO</div>
+        <div style="font-size:9.5px;color:var(--t3);margin-top:3px;">Presidential declaration required ｜ Stafford Act</div>
+      </div>
+      <div class="panel" id="t-jblm" style="opacity:.4;">
+        <div style="font-size:11px;font-weight:500;color:var(--t1);"><i class="ti ti-badge"></i> JBLM I Corps (Federal)</div>
+        <div style="font-size:9.5px;color:var(--t3);margin-top:3px;">President only ｜ Stafford Act Title V ｜ Separate chain</div>
+      </div>
+    </div>`;
+
+  const seocMembers = [
+    {id:'sm-gov',  n:'Governor of Washington', role:'State Emergency Director (sole authority — Guard)', icon:'🏛'},
+    {id:'sm-adjgen',n:'Adjutant General (WA Guard)', role:'SEOC Commander', icon:'⭐'},
+    {id:'sm-emd',  n:'WA Emergency Management Dir.', role:'State EOC Director', icon:'🛡'},
+    {id:'sm-doh',  n:'WA Dept. of Health', role:'ESF-8 Medical', icon:'🏥'},
+    {id:'sm-wsdot',n:'WSDOT Director', role:'ESF-1 Transportation', icon:'🛣'},
+    {id:'sm-psc',  n:'WA Utilities & Transport Comm.', role:'ESF-12 Energy', icon:'⚡'},
+  ];
+  const sg = document.getElementById('s3-seoc');
+  if(sg) sg.innerHTML = seocMembers.map(m=>`
+    <div id="${m.id}" style="display:flex;align-items:center;gap:7px;padding:7px 8px;
+      background:var(--bg3);border:1px solid var(--bd);border-radius:7px;transition:all .4s;">
+      <span class="sm-dot" style="width:8px;height:8px;border-radius:50%;background:var(--t3);flex-shrink:0;transition:background .4s;"></span>
+      <div style="min-width:0;">
+        <div style="font-size:11.5px;color:var(--t2);font-weight:500;">${m.icon} ${m.n}</div>
+        <div style="font-size:9px;color:var(--t3);margin-top:1px;">${m.role}</div>
+        <div class="sm-arr" style="font-size:9px;color:var(--t3);margin-top:1px;">— Not yet assembled</div>
+      </div>
+    </div>`).join('');
+
+  const kceocMembers = [
+    {id:'km-exec',  n:'King County Executive', role:'KCEOC Director | KCC 12.52 push-model authority', icon:'👤'},
+    {id:'km-sheriff',n:'King County Sheriff', role:'ESF-13 Law Enforcement', icon:'⭐'},
+    {id:'km-metro', n:'KC Metro Transit', role:'ESF-1 | Ferry vessels for West Seattle', icon:'🚌'},
+    {id:'km-pub',   n:'KC Public Health', role:'ESF-8 | DMCC coordination', icon:'🏥'},
+    {id:'km-roads', n:'KC Roads Division', role:'ESF-3 Public Works', icon:'🏗'},
+    {id:'km-oem',   n:'City of Seattle OEM', role:'ESF-5 | 911 coordination', icon:'📡'},
+  ];
+  const kg = document.getElementById('s3-kceoc');
+  if(kg) kg.innerHTML = kceocMembers.map(m=>`
+    <div id="${m.id}" style="display:flex;align-items:center;gap:7px;padding:7px 8px;
+      background:var(--bg3);border:1px solid var(--bd);border-radius:7px;transition:all .4s;">
+      <span class="km-dot" style="width:8px;height:8px;border-radius:50%;background:var(--t3);flex-shrink:0;transition:background .4s;"></span>
+      <div style="min-width:0;">
+        <div style="font-size:11.5px;color:var(--t2);font-weight:500;">${m.icon} ${m.n}</div>
+        <div style="font-size:9px;color:var(--t3);margin-top:1px;">${m.role}</div>
+        <div class="km-arr" style="font-size:9px;color:var(--t3);margin-top:1px;">— Not yet assembled</div>
+      </div>
+    </div>`).join('');
+
+  addAI(3,'Master AI','Governor declaration received. SEOC Camp Murray activating. KCEOC Renton already operational (duty officer on-site). ESF structure initializing. Pull-model issue anticipated — 39 cities must send resource requests before King County can dispatch.','ag-master');
+}},
+
+{t:660,id:'s3-kceoc-exec',fn:()=>{
+  const el=document.getElementById('km-exec');
+  if(el){el.querySelector('.km-dot').style.background='var(--green)';el.querySelector('.km-arr').textContent='✓ KCEOC T+8:00 — On site';el.querySelector('.km-arr').style.color='var(--green)';el.style.borderColor='#1F5C49';}
+  addAI(3,'Local AI (KCEOC)','King County Executive on-site KCEOC. KCC 12.52 push-model authority invoked — not waiting for city requests. SAR dispatch to Pioneer Square authorized pre-emptively (Cascadia Rising 2016 AAR: impacted cities will have LITTLE TO NO CAPABILITY to assess needs and relay requests).','ag-local');
+  addHEM(3,3,'KCEOC Pull-Model Crisis: Only 4 of 39 cities have sent resource requests (T+8min). Standard procedure requires King County to wait. Cascadia Rising 2016 AAR finding: "impacted jurisdictions will have little to no capability." Invoke push-model authority under KCC 12.52 and dispatch SAR to Pioneer Square without city confirmation?','King County Executive ｜ KCEOC','escalated');
+}},
+{t:780,id:'s3-push-resolve',fn:()=>{
+  resolveHEM(3,'King County Executive','Push-model authority invoked under KCC 12.52. SAR teams dispatched to Pioneer Square and Capitol Hill without waiting for Seattle EOC confirmation. SOOS AEP pre-authorized trigger: "documented failure mode from every catastrophic exercise."');
+  addAI(3,'Master AI','HEM-003 resolved. Push-model activated. GAR recorded. SOOS AEP (Agentic Execution Protocol) principle: pre-authorized push-model triggers — the SO carries its own authority proof. No request-response cycle required. This is the Cascadia Rising lesson made executable.','ag-master');
+  const el=document.getElementById('km-sheriff');
+  if(el){el.querySelector('.km-dot').style.background='var(--green)';el.querySelector('.km-arr').textContent='✓ KCEOC T+10:00';el.querySelector('.km-arr').style.color='var(--green)';el.style.borderColor='#1F5C49';}
+}},
+{t:900,id:'s3-transport-hem',fn:()=>{
+  addHEM(3,4,'FOUR-AUTHORITY TRANSPORT PROBLEM: West Seattle Bridge closed — ~100,000 residents isolated. Ferry service solution requires: (1) WSDOT owns bridge, declares closure; (2) KC Metro Transit operates ferry vessels; (3) Port of Seattle controls Coleman Dock terminal; (4) City of Seattle DOT controls road access to ferry terminals. Four authorities, four call chains, one emergency. Estimated time to first ferry departure (without SOOS): 35 minutes. With SOOS SOV/KIA cross-authority verification: estimated 4 minutes. Authorize parallel coordination?','King County Executive + WSDOT + KC Metro + Port of Seattle','escalated');
+  addAI(3,'Master AI','HEM-004: Four-Authority West Seattle transport problem active. SOV (Sovereign Object Verifier) + KIA (Key Identity Assertion) enables cross-jurisdictional authority verification in real-time. Each agency SO carries its own delegated authority — no phone calls required. Demonstrating SOOS value proposition.','ag-master');
+}},
+{t:1200,id:'s3-transport-resolve',fn:()=>{
+  resolveHEM(4,'King County Executive (parallel coordination)','SOOS cross-authority protocol invoked. All 4 agencies confirmed simultaneously via SOV/KIA. First authorized ferry departure: T+24min from bridge closure (vs. estimated 35min manual coordination). West Seattle ferry bridge operational.');
+  addAI(3,'Master AI','HEM-004 resolved. Cross-authority coordination completed in under 25 minutes. GAR recorded across all 4 agency SOs. Ferry service active. SOOS SOV+KIA demonstrated: jurisdictional barriers dissolved at protocol layer.','ag-master');
+  const wsbFerry=document.getElementById('ic-wsb-ferry');
+  if(wsbFerry)wsbFerry.textContent='FERRY AUTHORIZED (T+24min)';
+  const tg=document.getElementById('t-guard');
+  if(tg){tg.style.opacity='1';tg.style.borderColor='var(--green)';}
+}},
+{t:1800,id:'s3-seoc-gov',fn:()=>{
+  const el=document.getElementById('sm-gov');
+  if(el){el.querySelector('.sm-dot').style.background='var(--green)';el.querySelector('.sm-arr').textContent='✓ SEOC T+30:00';el.querySelector('.sm-arr').style.color='var(--green)';el.style.borderColor='#1F5C49';}
+  addAI(3,'Local AI (SEOC Camp Murray)','Governor on-site SEOC. WA National Guard activation signed. FEMA Region X Presidential declaration request drafted. Camp Murray adjacent to JBLM — coordination channel opened but JBLM federal authority chain is separate.','ag-local');
+  addHEM(3,5,'Presidential Declaration: FEMA Individual Assistance + Public Assistance requires Presidential declaration. Governor has submitted request. FEMA Region X processing. Estimated time to declaration: 2-4 hours. IA cannot begin until declaration issued.','WA Governor → FEMA Region X → White House','pending');
+}},
+{t:7200,id:'s3-fema-declare',fn:()=>{
+  resolveHEM(5,'President of the United States','Presidential Major Disaster Declaration issued (T+2hr). FEMA IA and PA authorized. JFO (Joint Field Office) establishment ordered in Seattle area. Federal resources unlocked.');
+  const tf=document.getElementById('t-fema');
+  if(tf){tf.style.opacity='1';tf.style.borderColor='var(--blue)';}
+  addAI(3,'Master AI','Presidential declaration received T+2hr. FEMA IA/PA authorized. GAR recorded. JFO establishment underway. FEMA HAZUS preliminary damage assessment protocol activated. Individual Assistance registration now open.','ag-master');
+}},
+
+// ─ Screen 4 — Media Response ─────────────────────────────────
+{t:5,id:'s4-init',fn:()=>{
+  document.getElementById('s4-main').innerHTML=`
+    <div class="panel">
+      <div class="panel-h"><i class="ti ti-broadcast"></i> IPAWS-OPEN / WEA Wireless Emergency Alert
+        <span style="margin-left:auto;font-size:9px;color:var(--t3);">WA SEMD ｜ FCC Part 11 IPAWS</span></div>
+      <div style="display:flex;align-items:center;gap:4px;margin-bottom:6px;">
+        <div style="flex:1;background:#1A2622;border:1px solid var(--amber);border-radius:7px;padding:8px;text-align:center;" id="s4-wea-cell">
+          <div style="font-size:9px;color:var(--amber);">▶ ACTIVE</div>
+          <div style="font-size:11px;color:var(--amber);">WEA Earthquake Alert</div></div>
+      </div>
+      <div style="font-size:9.5px;color:var(--t3);">ShakeAlert triggered WEA automatically at T+0. All phones in affected area received Presidential Alert.</div>
+    </div>
+    <div class="panel">
+      <div class="panel-h"><i class="ti ti-news"></i> Local Broadcast + Social Media ｜ Real-time Feed</div>
+      <div id="s4-news" style="max-height:220px;overflow-y:auto;"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div class="panel">
+        <div class="panel-h"><i class="ti ti-alert-triangle"></i> WA Public Messaging</div>
+        <div id="s4-msg"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-h"><i class="ti ti-shield"></i> IPAWS Categories Active</div>
+        <div id="s4-ipaws"></div>
+      </div>
+    </div>`;
+  const msg=document.getElementById('s4-msg');
+  if(msg)[
+    {m:'Drop, Cover, Hold On',s:'WEA issued at T−8s'},
+    {m:'Tsunami Warning — Elliott Bay',s:'NWS issued T+1min'},
+    {m:'Avoid ALL bridges and overpasses',s:'WSDOT via WEA T+3min'},
+    {m:'Self-sufficiency minimum 14 days',s:'WA CEMP 2024 standing message'},
+    {m:'911 overloaded — text if possible',s:'Seattle OEM advisory'}
+  ].forEach(i=>{msg.innerHTML+=`<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--bd);font-size:11px;"><span style="color:var(--t2);">${i.m}</span><span style="color:var(--t3);font-size:9.5px;">${i.s}</span></div>`;});
+  const ip=document.getElementById('s4-ipaws');
+  if(ip)[
+    {c:'EAS — Emergency Alert System','s':'ACTIVE','col':'var(--red)'},
+    {c:'WEA — Wireless Emergency Alert','s':'ACTIVE','col':'var(--red)'},
+    {c:'NOAA Weather Radio','s':'ACTIVE','col':'var(--amber)'},
+    {c:'NWS Tsunami Warning','s':'ACTIVE','col':'var(--red)'},
+  ].forEach(i=>{ip.innerHTML+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid var(--bd);font-size:11px;"><span style="color:var(--t2);">${i.c}</span><span style="font-size:9px;padding:2px 6px;border-radius:4px;background:#1A0808;color:${i.s==='ACTIVE'?'var(--red)':'var(--t3)'};">${i.s}</span></div>`;});
+  addAI(4,'Local AI (IPAWS)','WEA Presidential Alert transmitted at T−8s via ShakeAlert integration. All cellular carriers broadcasting in King, Pierce, Snohomish counties. 911 call volume 2x capacity. NWS tsunami warning for Elliott Bay waterfront issued.','ag-local');
+}},
+{t:15,id:'s4-n1',fn:()=>{addNews('KOMO-TV: BREAKING — Major earthquake Seattle. Anchor reports shaking in studio. Broadcasting live.',  'red');}},
+{t:40,id:'s4-n2',fn:()=>{addNews('KING 5: Pioneer Square LIVE SHOT — building facades falling. Camera crew reporting from Pioneer Way.','red');}},
+{t:120,id:'s4-n3',fn:()=>{addNews('KIRO 7: West Seattle Bridge closure confirmed by WSDOT. ~100,000 residents isolated. Alternative routes unknown.','amber');}},
+{t:180,id:'s4-n4',fn:()=>{
+  addNews('SEATTLETIMES.COM: "M7.2 — Worst Case Seattle Fault Scenario Has Happened" — live updates.','amber');
+  addHEM(4,6,'Press conference: Governor and King County Executive briefing requested. SOOS Master AI has drafted a factual statement (confirmed data only, no HAZUS estimates). Human approval required before release.','WA Governor\'s Communications Director ｜ King County PIO','pending');
+  addAI(4,'Master AI','HEM-006: Press statement drafted (facts only — ShakeAlert data, KCEOC activation, Governor declaration). No HAZUS estimates in public statement — AI cannot confirm casualty figures. Human PIO approval required.','ag-master');
+}},
+{t:600,id:'s4-n5',fn:()=>{
+  resolveHEM(6,'WA Governor\'s Communications Director','Statement approved with 3 edits. Press conference at T+30min. Key message: self-sufficiency 14 days, avoid all bridges, 911 text-if-possible.');
+  addNews('GOVERNOR PRESS CONFERENCE LIVE — "This is the worst earthquake in Washington State history. We are responding."','amber');
+  addAI(4,'Local AI (Media)','Governor press conference broadcast live. National media pickup confirmed. Social media volume: ~2M posts in first 30 minutes. Misinformation flagged: false reports of Cascadia subduction zone activation — monitoring.','ag-local');
+}},
+{t:1800,id:'s4-n6',fn:()=>{addNews('CNN, NBC, ABC NATIONAL COVERAGE — Seattle earthquake all networks. FEMA Administrator en route to Seattle.','amber');}},
+{t:7200,id:'s4-n7',fn:()=>{addNews('FEMA.GOV Individual Assistance registration OPEN — DisasterAssistance.gov. Presidential declaration confirmed.','green');}},
+
+// ─ Screen 5 — Citizen Relief ─────────────────────────────────
+{t:180,id:'s5-hazus-start',fn:()=>{
+  document.getElementById('dc-bldgs').textContent='9,062';
+  document.getElementById('dc-bldgsS').textContent='King Co. estimate ±15%';
+  document.getElementById('dc-dmgd').textContent='29,094';
+  document.getElementById('dc-dmgdS').textContent='15-county region';
+  document.getElementById('dc-fatal').textContent='300–400';
+  document.getElementById('dc-fatalS').textContent='Night scenario (30-40% of day rate)';
+  document.getElementById('dc-inj').textContent='5,000–6,000';
+  document.getElementById('dc-injS').textContent='Night rate — most in residential';
+  document.getElementById('vsc-disp').textContent='~31,278';
+  document.getElementById('vsc-power').textContent='218,464';
+  addAI(5,'Simulation AI','HAZUS first estimate: 9,062 buildings completely damaged (King Co.), 29,094 extensively damaged (15-county). Fatalities: 300-400 (night scenario — 30-40% of daytime rate). All figures are AI estimates — no confirmed data. Source: USGS M7.2 Seattle Fault Scenario (2005).','ag-sim');
+}},
+{t:480,id:'s5-relief-init',fn:()=>{
+  document.getElementById('s5-relief-panel').style.display='block';
+  document.getElementById('s5-relief-content').innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+      <div style="padding:8px;background:var(--bg3);border-radius:7px;border-left:2px solid var(--amber);">
+        <div style="font-size:10.5px;font-weight:600;color:var(--t0);margin-bottom:4px;">① Emergency Shelter</div>
+        <div style="font-size:10px;color:var(--t3);">Authority: RCW 38.52 | KC ESF-6</div>
+        <div style="font-size:10px;color:var(--t2);margin-top:4px;">King County ARC shelters: 23 pre-designated sites. Schools activated as primary shelters under KC ESF-6. Capacity: ~18,000. Demand HAZUS estimate: 18,193.</div>
+        <div style="font-size:9px;color:var(--amber);margin-top:4px;padding:2px 5px;background:#1A1200;border-radius:3px;display:inline-block;">Push-model dispatch pre-authorized</div>
+      </div>
+      <div style="padding:8px;background:var(--bg3);border-radius:7px;border-left:2px solid var(--blue);">
+        <div style="font-size:10.5px;font-weight:600;color:var(--t0);margin-bottom:4px;">② FEMA Individual Assistance</div>
+        <div style="font-size:10px;color:var(--t3);">Authority: Stafford Act §408 ｜ Presidential declaration required</div>
+        <div style="font-size:10px;color:var(--t2);margin-top:4px;">IA registration opens after Presidential declaration. Online: DisasterAssistance.gov. Phone: 1-800-621-FEMA. Up to $43,900 per household.</div>
+        <div style="font-size:9px;color:var(--blue);margin-top:4px;padding:2px 5px;background:#0A1A2E;border-radius:3px;display:inline-block;">⏳ Awaiting Presidential declaration</div>
+      </div>
+      <div style="padding:8px;background:var(--bg3);border-radius:7px;border-left:2px solid var(--purple);">
+        <div style="font-size:10.5px;font-weight:600;color:var(--t0);margin-bottom:4px;">③ SBA Disaster Loans</div>
+        <div style="font-size:10px;color:var(--t3);">Authority: Small Business Act §7(b)</div>
+        <div style="font-size:10px;color:var(--t2);margin-top:4px;">Low-interest loans for homeowners, renters, businesses. Up to $200,000 home repair. Requires Presidential declaration. Physical damage survey required first.</div>
+      </div>
+      <div style="padding:8px;background:var(--bg3);border-radius:7px;border-left:2px solid var(--green);">
+        <div style="font-size:10.5px;font-weight:600;color:var(--t0);margin-bottom:4px;">④ WA CEMP 14-Day Self-Sufficiency</div>
+        <div style="font-size:10px;color:var(--t3);">WA Comprehensive Emergency Management Plan 2024</div>
+        <div style="font-size:10px;color:var(--t2);margin-top:4px;">Public is expected to self-sustain for minimum 14 days. State resources prioritized for life-safety operations, not general welfare in the first 72 hours.</div>
+        <div style="font-size:9px;color:var(--green);margin-top:4px;padding:2px 5px;background:#0A1E14;border-radius:3px;display:inline-block;">SOOS: push-model supply dispatch pre-authorized</div>
+      </div>
+    </div>`;
+  addAI(5,'Master AI','Citizen relief framework active: KC ARC shelters activating (23 sites, pre-authorized push dispatch). FEMA IA awaiting Presidential declaration. WA CEMP 14-day self-sufficiency baseline in effect. Debris estimate: 7.42M tons (15-county) — largest urban disaster cleanup in Pacific Northwest history.','ag-master');
+  document.getElementById('vsc-shelter').textContent='3,200 (T+8min)';
+  document.getElementById('vsc-rescue').textContent='~5,000–6,000 AI est.';
+  document.getElementById('vsc-med').textContent='847 transported';
+}},
+{t:7200,id:'s5-ia-open',fn:()=>{
+  document.getElementById('vsc-shelter').textContent='~8,400 (T+2hr)';
+  document.getElementById('vsc-rescue').textContent='2,100 confirmed rescued';
+  document.getElementById('vsc-med').textContent='3,200 transported';
+  addAI(5,'Master AI','FEMA IA registration now OPEN — Presidential declaration received. SOOS CAP-RRS: pre-built registration pathways activated. AI can assist applicants with data collection but cannot submit applications without human confirmation. Estimated 31,278 displaced households eligible.','ag-master');
+  addHEM(5,9,'FEMA Preliminary Damage Assessment: PDA teams must physically inspect damaged buildings before permanent FEMA assistance can be calculated. Deploying 24 PDA teams requires coordination across 39 cities. SOOS: AI pre-drafted inspection routing — human team leads required for authority.','FEMA Region X Director ｜ King County Emergency Manager','pending');
+}},
+
+// ─ Screen 6 — Damage Status ──────────────────────────────────
+{t:180,id:'s6-init',fn:()=>{
+  document.getElementById('s6-main').innerHTML=`
+    <div style="background:#1A1030;border:1px solid var(--purple);border-radius:8px;padding:8px 12px;margin-bottom:10px;display:flex;align-items:center;gap:10px;">
+      <span style="font-size:18px;">🤖</span>
+      <div>
+        <div style="font-size:11px;font-weight:600;color:var(--purple);">HAZUS AI Estimates — Source: USGS M7.2 Seattle Fault Scenario</div>
+        <div style="font-size:10px;color:#9B7FE8;margin-top:2px;">
+          Purple figures are FEMA HAZUS model projections. Night scenario (2:47 AM) = 30-40% of daytime figures. No confirmed casualty data available within first 6 hours.
+        </div>
+      </div>
+    </div>
+    <table style="width:100%;border-collapse:collapse;font-size:11px;" class="area-table">
+      <thead><tr>
+        <th style="text-align:left;color:var(--t3);font-weight:500;padding:4px 6px;border-bottom:1px solid var(--bd);font-size:10px;">District</th>
+        <th style="text-align:left;color:var(--t3);font-weight:500;padding:4px 6px;border-bottom:1px solid var(--bd);font-size:10px;">MMI</th>
+        <th style="text-align:right;color:var(--t3);font-weight:500;padding:4px 6px;border-bottom:1px solid var(--bd);font-size:10px;">Bldgs Destroyed</th>
+        <th style="text-align:right;color:var(--t3);font-weight:500;padding:4px 6px;border-bottom:1px solid var(--bd);font-size:10px;">Bldgs Damaged</th>
+        <th style="text-align:right;color:var(--purple);font-weight:500;padding:4px 6px;border-bottom:1px solid var(--bd);font-size:10px;">Fatalities 🤖</th>
+        <th style="text-align:right;color:var(--purple);font-weight:500;padding:4px 6px;border-bottom:1px solid var(--bd);font-size:10px;">Displaced 🤖</th>
+      </tr></thead>
+      <tbody>
+        ${[
+          {d:'Downtown / Pioneer Square',m:'IX',bd:'3,200',bx:'6,400',f:'80–120',dp:'4,200',fc:'#FF2020'},
+          {d:'South Lake Union (Amazon)',m:'IX',bd:'1,800',bx:'3,200',f:'40–60',dp:'2,100',fc:'#FF2020'},
+          {d:'Capitol Hill / First Hill',m:'VIII',bd:'2,100',bx:'5,800',f:'50–80',dp:'5,500',fc:'var(--red)'},
+          {d:'West Seattle',m:'VIII',bd:'1,400',bx:'4,200',f:'30–50',dp:'4,800',fc:'var(--red)'},
+          {d:'Bellevue / Kirkland',m:'VIII',bd:'900',bx:'3,100',f:'20–30',dp:'3,200',fc:'var(--amber)'},
+          {d:'Renton / Kent / Sea-Tac',m:'VII',bd:'800',bx:'4,200',f:'15–25',dp:'5,400',fc:'var(--amber)'},
+          {d:'Redmond / Bellevue (E)',m:'VII',bd:'600',bx:'2,900',f:'10–15',dp:'3,600',fc:'#D4C020'},
+          {d:'JBLM / Camp Murray Area',m:'VI',bd:'200',bx:'1,100',f:'2–5',dp:'1,400',fc:'#88AA44'},
+        ].map(r=>`<tr>
+          <td style="padding:5px 6px;border-bottom:1px solid var(--bd);color:var(--t2);">${r.d}</td>
+          <td style="padding:5px 6px;border-bottom:1px solid var(--bd);font-weight:600;color:${r.fc};">${r.m}</td>
+          <td style="padding:5px 6px;border-bottom:1px solid var(--bd);text-align:right;font-family:monospace;color:var(--red);">${r.bd}</td>
+          <td style="padding:5px 6px;border-bottom:1px solid var(--bd);text-align:right;font-family:monospace;color:var(--amber);">${r.bx}</td>
+          <td style="padding:5px 6px;border-bottom:1px solid var(--bd);text-align:right;font-family:monospace;color:var(--purple);">${r.f}</td>
+          <td style="padding:5px 6px;border-bottom:1px solid var(--bd);text-align:right;font-family:monospace;color:var(--purple);">${r.dp}</td>
+        </tr>`).join('')}
+        <tr style="background:var(--bg3);">
+          <td style="padding:5px 6px;font-weight:600;color:var(--t0);">KING COUNTY TOTAL</td>
+          <td style="padding:5px 6px;"></td>
+          <td style="padding:5px 6px;text-align:right;font-weight:700;color:var(--red);font-family:monospace;">~9,062</td>
+          <td style="padding:5px 6px;text-align:right;font-weight:700;color:var(--amber);font-family:monospace;">21,000+</td>
+          <td style="padding:5px 6px;text-align:right;font-weight:700;color:var(--purple);font-family:monospace;">300–400</td>
+          <td style="padding:5px 6px;text-align:right;font-weight:700;color:var(--purple);font-family:monospace;">31,278</td>
+        </tr>
+      </tbody>
+    </table>
+    <div style="font-size:9.5px;color:var(--t3);margin-top:8px;line-height:1.5;">
+      Source: USGS M7.2 Seattle Fault Scenario HAZUS analysis (5bac1792b2370). Night scenario figures = 30-40% of 2:00 PM scenario.<br>
+      Building inventory: King County GIS + LIDAR. 🤖 columns = AI estimates ±15%. No confirmed casualties available within first 6 hours of event.<br>
+      <span style="color:var(--purple);">Capital stock losses: $19.868B (15-county) | Income losses: $5.133B | Without potable water: 399,991 | Debris: 7.42M tons</span>
+    </div>`;
+  addAI(6,'Simulation AI','HAZUS district breakdown complete. Pioneer Square catastrophic loss confirmed — URM building stock. SOOS Event Log: all HAZUS estimates timestamped as unconfirmed AI projections. Any field data that supersedes these estimates will be logged as INTERPRETATION_SUPERSEDED event per CAP-RRS protocol.','ag-sim');
+}},
+
+]; // end EVENTS
+
+// ── S7 EVENTS — Critical Infrastructure ──────────────────────
+const S7_EVENTS = [
+
+// T+4s: WebEOC AWS moment
+{t:4,id:'s7-aws',fn:()=>{
+  icUpd('amazon','AWS FAILOVER','amber','amber',
+    'AWS US-West-2 Seattle region failed at T+4s — automatic failover to Oregon (US-West-2 backup). WebEOC disaster coordination is OPERATIONAL but dependent on Amazon infrastructure despite Amazon HQ being in the MMI IX zone. SOOS Event Log is locally held — not dependent on cloud.',
+    5,'amber','AWS Oregon (backup)');
+  addIT('Amazon / WebEOC','AWS Seattle failed T+4s. WebEOC on Oregon failover. Governance platform running on disaster victim\'s infrastructure.','amber');
+  vs7('webeoc','AWS Oregon (backup)','amber');
+  addAI(7,'Master AI','⚠ AWS Dependency: WebEOC now running on AWS Oregon failover. Risk: if Oregon region experiences sympathy failure, or if AWS prioritizes commercial traffic over government disaster coordination, KCEOC loses its platform. SOOS WAL Event Log is locally held and append-only — designed for exactly this scenario.','ag-master');
+}},
+
+// T+1min: Pioneer Square — first report
+{t:60,id:'s7-pioneer1',fn:()=>{
+  icUpd('pioneer','COLLAPSES CONFIRMED','red','red',
+    'Seattle Fire Dept duty officer reports via radio: multiple structure collapses audible at Pioneer Square. No units available for assessment — all responding to 911 priority calls. URM building stock (pre-1940 unreinforced masonry) behaving as USGS scenario predicted.',
+    5,'red','Multiple collapses');
+  addIT('Pioneer Square','SFD duty officer reports collapse sounds. No units available. URM stock behaving as HAZUS predicted.','red');
+  addHEM(7,10,'Pioneer Square SAR: Multiple URM collapses confirmed (audio/radio). SAR teams needed NOW but West Seattle Bridge closed limits routing. KC Executive push-model dispatch: authorize SAR units from Renton and Bellevue via I-405 bypass (Seismic Lifeline Corridor)?','King County Executive ｜ KC Emergency Manager','escalated');
+}},
+{t:300,id:'s7-pioneer-sar',fn:()=>{
+  resolveHEM(10,'King County Executive','SAR teams from Renton + Bellevue authorized via I-405 Seismic Lifeline Corridor. WA USAR Taskforce 1 pre-authorized for Pioneer Square deployment. ETA T+45min. No city of Seattle request received — push-model invoked per KCC 12.52.');
+  icUpd('pioneer','SAR EN ROUTE','red','red',
+    'WA USAR Taskforce 1 + KC SAR units routing via I-405 Lifeline Corridor. ETA T+45min. HAZUS estimate: 200+ buildings with complete damage. Rescue operations will take 72+ hours. No access confirmation yet.',
+    10,'red','SAR en route via I-405');
+  addIT('Pioneer Square','SAR teams dispatched — I-405 Lifeline Corridor. Push-model, no city request.','red');
+  addAI(7,'Local AI (KC SAR)','USAR Taskforce 1 routing confirmed. I-405 Seismic Lifeline Corridor intact (MMI V-VI zone). ETA Pioneer Square T+45min. SOOS CAP-RRS: SAR dispatch logged as AEP pre-authorized action. No Seattle EOC request received — Cascadia Rising 2016 AAR: "impacted jurisdictions will have little to no capability."','ag-local');
+}},
+
+// T+3min: Port — tsunami
+{t:180,id:'s7-port1',fn:()=>{
+  icUpd('port','TSUNAMI HIT','red','red',
+    'Local tsunami wave (generated by fault rupture) reached Elliott Bay waterfront. Harbor Island liquefaction confirmed by duty officer report. Port suspended all operations. Seattle-Bremerton ferry vessels at sea (safe). Coleman Dock terminal status unknown.',
+    5,'red','Tsunami + Liquefaction');
+  addIT('Port of Seattle','Local tsunami Elliott Bay. Harbor Island liquefaction confirmed. Coleman Dock status unknown.','red');
+  vs7('port','Tsunami active — closed','red');
+}},
+{t:1200,id:'s7-port2',fn:()=>{
+  icUpd('port','TSUNAMI CLEARED — Assessing','amber','amber',
+    'Elliott Bay local tsunami subsided (T+20min). Harbor Island: significant liquefaction, structural damage to crane foundations. Coleman Dock: accessible for ferry service (West Seattle ferry protocol). Port not available for freight operations — logistics reroute required.',
+    20,'amber','Ferry OK, freight closed');
+  addIT('Port of Seattle','Tsunami cleared. Liquefaction damage to cranes. Coleman Dock available for ferry.','amber');
+  vs7('port','Ferry: OK | Freight: closed','amber');
+}},
+
+// T+5min: Harborview surge
+{t:300,id:'s7-hosp1',fn:()=>{
+  icUpd('harborview','TRAUMA SURGE ACTIVE','red','red',
+    'Harborview Level I Trauma receiving first casualties. Nurse supervisor activating all-call staffing (2:47 AM most staff off-site — 30-40min return time). Emergency generators confirmed. OR capacity: 2 of 12 rooms active. DMAT staging authorized.',
+    30,'red','Trauma surge — staffing up');
+  addIT('Harborview Medical','Trauma surge active. All-call staffing. 2 of 12 ORs active. Generators confirmed.','red');
+  vs7('hosp','Trauma surge — staffing up','red');
+}},
+{t:1800,id:'s7-hosp2',fn:()=>{
+  icUpd('harborview','BCP FULLY OPERATIONAL','amber','amber',
+    'Staff recall: 68% on-site (T+30min). OR capacity 8 of 12 rooms. Harborview treating 847 patients transported so far. DMCC functions activated — coordinating all King County hospital capacity. Declared Disaster Medical Coordination Center per KC ESF-8.',
+    70,'amber','DMCC active | 847 treated');
+  addIT('Harborview Medical','DMCC fully active. 8 ORs. 847 patients. 68% staff on-site.','amber');
+  vs7('hosp','DMCC active | 847 treated','amber');
+}},
+
+// T+8min: West Seattle / 4-authority problem
+{t:480,id:'s7-wsb1',fn:()=>{
+  icUpd('wsb','4-AUTHORITY PROBLEM','red','red',
+    'WSDOT closed bridge. 4 authorities required for ferry solution: (1) WSDOT — bridge closure; (2) KC Metro Transit — ferry vessels; (3) Port of Seattle — Coleman Dock; (4) City of Seattle DOT — road access to terminal. Manual coordination estimate: 35 minutes to first ferry. SOOS SOV/KIA: 4 minutes.',
+    0,'red','4-authority bottleneck');
+  addIT('West Seattle Bridge','4-authority ferry coordination problem. SOOS SOV/KIA invoked.','red');
+  vs7('wsb','Ferry pending (4-auth problem)','red');
+}},
+{t:1440,id:'s7-wsb2',fn:()=>{
+  icUpd('wsb','FERRY SERVICE ACTIVE','amber','amber',
+    'Cross-authority SOOS coordination resolved (T+24min from bridge closure). KC Metro Transit ferry vessels operating Coleman Dock → West Seattle. Service capacity: 400 passengers/trip, 15-minute frequency. Bridge inspection continues — structural engineers en route.',
+    15,'amber','Ferry active | Bridge inspection');
+  const wsbFerry=document.getElementById('ic-wsb-ferry');
+  if(wsbFerry)wsbFerry.textContent='ACTIVE — T+24min from closure';
+  addIT('West Seattle','Ferry service active. SOOS cross-authority T+24min (vs manual est. 35min).','amber');
+  vs7('wsb','Ferry active | Bridge inspecting','amber');
+}},
+
+// T+12min: I-90 Floating Bridge
+{t:720,id:'s7-i90-1',fn:()=>{
+  addAI(7,'Local AI (WSDOT)','I-90 floating bridge inspection team deployed by boat. Pontoon integrity requires visual inspection. Earliest assessment: T+45min. SR-520 bridge inspection parallel. Until cleared: 400,000+ residents east of Lake Washington have no confirmed vehicular access to Seattle.','ag-local');
+  addIT('I-90 / SR-520','Inspection teams deployed by boat. 400K+ Eastside residents access unknown.','amber');
+}},
+{t:3600,id:'s7-i90-2',fn:()=>{
+  icUpd('i90','I-90 CONDITIONALLY OPEN','amber','amber',
+    'I-90 floating bridge inspection complete (T+1hr). No pontoon breaches — minor seismic joint movement acceptable. Conditionally open: emergency vehicles and essential workers only. SR-520 inspection ongoing.',
+    60,'amber','Emergency vehicles only');
+  const sr=document.getElementById('ic-sr520');
+  if(sr)sr.textContent='Still inspecting';
+  addIT('I-90 Floating Bridge','Conditionally open — emergency vehicles. SR-520 still inspecting.','amber');
+  vs7('i90','Conditional — emergency vehicles','amber');
+}},
+
+// T+20min: Sea-Tac
+{t:1200,id:'s7-seatac1',fn:()=>{
+  addAI(7,'Local AI (Sea-Tac)','Sea-Tac Airport runway inspection: Runway 16L/34R — crack observed at taxiway Delta. All runways closed pending full inspection. ~180 diverted aircraft holding. FAA ATCSCC notified. Alternative: Boeing Everett (MMI V zone, 45km north) operational.','ag-local');
+  vs7('seatac','All runways closed — inspecting','red');
+  addIT('Sea-Tac Airport','Runway 16L/34R crack. All runways closed. Boeing Everett operational as alternate.','red');
+}},
+{t:5400,id:'s7-seatac2',fn:()=>{
+  vs7('seatac','Runway 16R open — limited ops','amber');
+  addAI(7,'Local AI (Sea-Tac)','Sea-Tac Runway 16R inspection complete — no structural damage. Limited operations resumed: emergency and priority flights only. Runway 16L/34R: crack repair underway, estimated 72 hours. Full restoration timeline unknown.','ag-local');
+  addIT('Sea-Tac Airport','Runway 16R operational. Emergency/priority flights. 16L/34R repair: 72hr.','amber');
+}},
+
+// T+45min: Power restoration begins
+{t:2700,id:'s7-power1',fn:()=>{
+  addAI(7,'Local AI (Seattle City Light)','SCL restoration plan: Hospital and EOC circuits restored first. 218,464 customers without power. District-by-district restoration: MMI V-VI zones (1-4 hours), MMI VII (12-24 hours), MMI VIII-IX (72+ hours). Note: HAZUS model predicts some infrastructure in MMI IX zone may require complete rebuild (>14 days).','ag-local');
+  vs7('power','218K without — restoring hospitals first','amber');
+  addIT('Seattle City Light','Hospital/EOC circuits first. 218K customers affected. MMI IX: 72hr+ estimate.','amber');
+}},
+{t:7200,id:'s7-power2',fn:()=>{
+  vs7('power','~60K restored (T+2hr)','amber');
+  addIT('Seattle City Light','~60K restored at T+2hr. Hospital circuits confirmed. MMI IX hardest hit areas still offline.','amber');
+  addAI(7,'Local AI (Seattle City Light)','T+2hr update: 60,000 customers restored (28%). Hospital priority circuits all confirmed. MMI IX downtown — extensive infrastructure damage, multiple transformer failures, overhead line collapses. Full restoration in MMI IX zone: 14+ days.','ag-local');
+}},
+
+// T+3hr: Cascadia Rising lesson plays out
+{t:10800,id:'s7-cascadia-lesson',fn:()=>{
+  addAI(7,'Master AI','T+3hr ASSESSMENT — Cascadia Rising 2016 AAR lessons confirmed in real event: (1) Pull-model failure: 34 of 39 cities still have not sent formal resource requests. King County Executive push-model authority prevented paralysis. (2) AWS/WebEOC dependency exposed but failover held. (3) Four-authority transport: SOOS cross-authority reduced 35-min bottleneck to 24 min. (4) SOOS Event Log: 847 governance decisions recorded, zero data loss despite WebEOC failover. GAR records available regardless of cloud platform status.','ag-master');
+  addHEM(7,11,'T+3hr Operational Assessment: Cascadia Rising 2016 finding confirmed: "impacted jurisdictions have little to no capability to assess and relay needs." 34/39 cities still not able to send formal requests. SOOS push-model is handling dispatch — but authorization documentation needs formal legal review for post-event audit.','KC Emergency Manager ｜ WA State AG Office','pending');
+}},
+
+// T+6hr: End state
+{t:20400,id:'s7-t6hr',fn:()=>{
+  addAI(7,'Master AI','T+6hr MILESTONE — Organized response phase. JBLM I Corps still awaiting Presidential authorization (Stafford Act Title V). WA National Guard fully deployed. FEMA JFO being established. USAR Taskforce 1 confirms 127 rescues from Pioneer Square. Presidential declaration authorized FEMA IA. 8,400 in shelters. Ferry service maintaining West Seattle access. Event Log: 1,842 governance records — all timestamped, append-only, locally held. No governance data lost despite 3 WebEOC interruptions.','ag-master');
+  setPhase('Phase: ORGANIZED RESPONSE | T+6hr | Federal assets mobilizing','var(--amber)');
+  vs7('webeoc','3 interruptions — all recovered','amber');
+}},
+
+]; // end S7_EVENTS
+
+// INIT
+window.addEventListener('load',()=>{
+  initSeismo();
+  window.addEventListener('resize', initSeismo);
+  updateSeismo();
+  document.getElementById('clock').textContent = fmtClock(scenarioTime);
+  updateSpeedBadge(scenarioTime);
+  EVENTS.forEach(ev => { if (ev.t <= T_START) { fired.add(ev.id); try { ev.fn(); } catch(e) {} } });
+  S7_EVENTS.forEach(ev => { if (ev.t <= T_START) { fired.add(ev.id); try { ev.fn(); } catch(e) {} } });
+});
+</script>
+</body>
+</html>
